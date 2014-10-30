@@ -1,0 +1,5 @@
+GLuint FramebufferName = 0;
+glGenFramebuffers(1, &FramebufferName);
+glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+
+
