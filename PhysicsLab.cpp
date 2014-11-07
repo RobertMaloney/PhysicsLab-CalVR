@@ -20,23 +20,16 @@ using namespace osg;
 
 CVRPLUGIN(PhysicsLab)
 
-void setupScene();
+void setupScene( BulletHandler* );
 
 const double pi = 3.141593;
 int frame = 0;
-MatrixTransform * camNode;
+bool scenesetup = false;
+MatrixTransform * camNode, *boxMatrix;
 LightSource * lightsrc;
 PositionAttitudeTransform * lightMat;
 StateSet* lightSS;
-
-// Bullet
-/*
-btBroadphaseInterface* broadphase;
-btDefaultCollisionConfiguration* btcc;
-btCollisionDispatcher* btcd;
-btSequentialImpulseConstraintSolver* btsolver;
-btDiscreteDynamicsWorld* dynamicsWorld;
-*/
+int boxId;
 
 // Constructor
 PhysicsLab::PhysicsLab()
@@ -57,26 +50,13 @@ bool PhysicsLab::init()
   _mainMenu->setCallback(this);
   MenuSystem::instance()->addMenuItem(_mainMenu); 
   
-  setupScene();
+  bh = new BulletHandler();
+  setupScene( bh );
   
   return true;
 }
 
-void setupScene() {
-    // Bullet Include
-    /*
-    btBroadphaseInterface* broadphase = new btDbvtBroadphase();
-    btDefaultCollisionConfiguration* btcc = new btDefaultCollisionConfiguration();
-    btCollisionDispatcher* btcd = new btCollisionDispatcher(btcc);
-    btSequentialImpulseConstraintSolver* btsolver = new btSequentialImpulseConstraintSolver;
-    btDiscreteDynamicsWorld* dynamicsWorld = new btDiscreteDynamicsWorld(btcd, broadphase, btsolver, btcc);
-    dynamicsWorld->setGravity( btVector3(0,0,-10000) );
-    btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0, 0, 1), 1);
-    btCollisionShape* fallShape = new btSphereShape(1);
-    btDefaultMotionState* groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, -1, 0)));
-    btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, groundMotionState, groundShape, btVector3(0, 0, 0));
-    btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
-    */
+void setupScene( BulletHandler * bh ) {
     
     //navHandle = new NavigationHandler;
 	  PluginHelper::setObjectScale(1000.0);
@@ -95,10 +75,16 @@ void setupScene() {
     PluginHelper::getScene()->addChild( camNode );
     //camNode->addChild( floor );
     Geode * box = new Geode;
-    Box * boxprim = new Box( Vec3(0,0,300), 300);
+    Box * boxprim = new Box( Vec3(0,0,0), 300);
     ShapeDrawable * sd = new ShapeDrawable(boxprim);
     box->addDrawable(sd);
-    camNode->addChild( box );
+    boxMatrix = new MatrixTransform;
+    Matrix boxm;
+    boxm.makeTranslate(0,0,600);
+    boxMatrix->setMatrix( boxm );
+    boxId = bh->addBox( Vec3(0,0,600), 150 );
+    camNode->addChild( boxMatrix );
+    boxMatrix->addChild( box );
     
     Geode * floorBox = new Geode;
     Box * floorBoxPrim = new Box( Vec3(0,0,-1000), 2000);
@@ -155,9 +141,9 @@ void setupScene() {
     light0->setPosition( Vec4(0.0f, 0.0f, 0.0f, 1.0f) );
     light0->setLightNum(1);
     light0->setAmbient( Vec4(0.1f, 0.1f, 0.1f, 1.0f) );
-    light0->setDiffuse( Vec4(0.7f, 0.7f, 0.7f, 1.0f) );
-    light0->setSpecular( Vec4(0.3f, 0.3f, 0.3f, 1.0f) );
-    //light0->setConstantAttenuation(1.0f);
+    light0->setDiffuse( Vec4(0.7f, 0.1f, 0.1f, 1.0f) );
+    light0->setSpecular( Vec4(0.3f, 0.1f, 0.1f, 1.0f) );
+    light0->setConstantAttenuation(1.0f);
     lightsrc->setLight( light0 );
     lightsrc->setLocalStateSetModes(osg::StateAttribute::ON);
     lightsrc->setStateSetModes(*lightSS, osg::StateAttribute::ON);
@@ -184,38 +170,37 @@ void setupScene() {
 
     brickState->setAttributeAndModes(brickProgramObject, osg::StateAttribute::ON);
     */
+    
+    scenesetup = true;
 }
 
 // this is called if the plugin is removed at runtime
 PhysicsLab::~PhysicsLab()
 {
-    /*
-    delete dynamicsWorld;
-    delete btsolver;
-    delete broadphase;
-    delete btcc;
-    delete btcd;
-    */
+    
 }
 
 void PhysicsLab::preFrame()
 {
     static double z = 250.0;
-    //Vec3 eye(1*cos(pi*frame/180),1*sin(pi*frame/180),z);
     
-    //Matrix cam(Matrix::lookAt(eye, Vec3f(0,0,0), Vec3f(1,0,0)));
     Matrix cam = camNode->getMatrix();
-    Vec3d camt = cam.getTrans();
-    cam.setTrans(0, z,camt.z());
-    //camNode->setMatrix(cam);
+    Matrix change;
+    change.makeRotate(0.1 * pi / 180, cam.getRotate()*Vec3(0,0,1));
+    camNode->setMatrix(cam*change);
     frame = (frame + 1) % 720;
     
     if (frame % 60 == 0) {
       //std::cout << camNode->getMatrix();
       //z += 10;
     }
-    
-    
+    if (scenesetup) {
+        bh->stepSim();
+        boxMatrix->setMatrix( bh->getWorldTransform( boxId ) );
+        if (frame % 60 == 0) {
+            std::cout << "Box linear z velocity: " << bh->getLinearVelocity( boxId ).z() << std::endl;
+        }
+    }
 }
 
 bool PhysicsLab::processEvent(InteractionEvent * event) {
@@ -228,28 +213,37 @@ bool PhysicsLab::processEvent(InteractionEvent * event) {
             Matrix change = Matrix::identity();
             Vec3 trans(0,0,0);
             //std::cout << "KEY: " << kp->getKey() << std::endl;
+            Vec3 vel = bh->getLinearVelocity( boxId );
             switch (kp->getKey()) {
                 case 65361: //LEFT
                     std::cout << "Pressed LEFT.\n";
                     change.makeRotate(-15 * pi / 180, Vec3(0,0,1));
-                    trans.y() = 100;
+                    //trans.y() = 100;
+                    bh->setLinearVelocity( boxId, Vec3(1000,vel.y(),vel.z()) );
+                    bh->translate( boxId, Vec3(0,0,1) );
                     break;
                 case 65362: //UP
                     std::cout << "Pressed UP.\n";
                     change.makeTranslate(m.getRotate()*Vec3(-20,0,0));
-                    std::cout << change;
-                    trans.z() = 100;
+                    //std::cout << change;
+                    //trans.z() = 100;
+                    bh->setLinearVelocity( boxId, Vec3(vel.x(),1000,vel.z()) );
+                    bh->translate( boxId, Vec3(0,0,1) );
                     break;
                 case 65363: //RIGHT
                     std::cout << "Pressed RIGHT.\n";
                     change.makeRotate(15 * pi / 180, Vec3(0,0,1));
-                    trans.y() = -100;
+                    //trans.y() = -100;
+                    bh->setLinearVelocity( boxId, Vec3(-1000,vel.y(),vel.z()) );
+                    bh->translate( boxId, Vec3(0,0,1) );
                     break;
                 case 65364: //DOWN
                     std::cout << "Pressed DOWN.\n";
                     change.makeTranslate(m.getRotate()*Vec3(20,0,0));
-                    std::cout << change;
-                    trans.z() = -100;
+                    //std::cout << change;
+                    //trans.z() = -100;
+                    bh->setLinearVelocity( boxId, Vec3(vel.x(),-1000,vel.z()) );
+                    bh->translate( boxId, Vec3(0,0,1) );
                     break;
                 case 108: // L
                     if (!lightswitch) {
@@ -262,6 +256,11 @@ bool PhysicsLab::processEvent(InteractionEvent * event) {
                         lightsrc->setStateSetModes(*lightSS, osg::StateAttribute::OFF);
                     }
                     lightswitch = !lightswitch;
+                    break;
+                case 32: // Space
+                    std::cout << "Pressed SPACE.\n";
+                    bh->setLinearVelocity( boxId, Vec3(vel.x(),vel.y(),3000) );
+                    bh->translate( boxId, Vec3(0,0,1) );
                     break;
             }
             //camNode->setPosition(m*change);

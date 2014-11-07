@@ -21,8 +21,8 @@
 #include <osg/Material>
 #include <osg/StateSet>
 
-// Bullet
-//#include <btBulletDynamicsCommon.h>
+// Local
+#include "BulletHandler.h"
 
 class PhysicsLab : public cvr::CVRPlugin, public cvr::MenuCallback
 {
@@ -38,5 +38,8 @@ class PhysicsLab : public cvr::CVRPlugin, public cvr::MenuCallback
     bool init();
     void preFrame();
     bool processEvent(cvr::InteractionEvent*);
+    
+  private:
+    BulletHandler * bh;
 };
 #endif
