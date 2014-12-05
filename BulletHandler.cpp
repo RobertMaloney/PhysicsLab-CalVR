@@ -357,6 +357,27 @@ void BulletHandler::getWorldTransform( int id, osg::Matrixd & boxm ) {
     } else boxm.makeIdentity();
 }
 
+void BulletHandler::setWorldTransform( int id, osg::Matrixd & boxm ) {
+    btTransform m;
+    if (id >= numRigidBodies) return;
+    
+    btMotionState* ms = rbodies[id]->getMotionState();
+    if (ms) {
+        osg::Vec3 t = boxm.getTrans();
+        btVector3 btv( t.x(), t.y(), t.z() );
+    
+        osg::Quat q = boxm.getRotate();
+        btQuaternion btq( q.x(), q.y(), q.z(), q.w() );
+        btTransform btt(btq, btv);
+        std::cout << *(osg::Vec3*) &btt.getOrigin() << "\n";
+        rbodies[id]->setCenterOfMassTransform(btt);
+        ms->setWorldTransform(btt);
+        rbodies[id]->setLinearVelocity(btv);
+        dynamicsWorld->synchronizeSingleMotionState( rbodies[id] );
+        std::cout << rbodies[id]->getCenterOfMassPosition().y() << "\n";
+    }
+}
+
 btDiscreteDynamicsWorld* BulletHandler::getDynamicsWorld() {
     return dynamicsWorld;
 }

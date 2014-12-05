@@ -4,6 +4,7 @@
 #include <vector>
 #include <osg/Vec3>
 #include <osg/Matrixd>
+#include <osg/io_utils>
 #include <btBulletDynamicsCommon.h>
 #include <btBulletCollisionCommon.h>
 #include "AntiGravityField.h"
@@ -28,6 +29,7 @@ class BulletHandler
     void stepSim( double );
     btDiscreteDynamicsWorld* getDynamicsWorld();
     void getWorldTransform( int, osg::Matrixd& );
+    void setWorldTransform( int, osg::Matrixd& );
     
   private:
     btBroadphaseInterface* broadphase;

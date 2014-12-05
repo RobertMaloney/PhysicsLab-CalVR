@@ -33,6 +33,7 @@ StateSet* lightSS;
 int boxId, seesawid;
 std::vector<int> sphereId;
 std::vector<MatrixTransform*> sphereMatrix;
+MatrixTransform* handBall;
 
 // Constructor
 PhysicsLab::PhysicsLab()
@@ -66,11 +67,11 @@ void setupScene( ObjectFactory * of ) {
 	  PluginHelper::setObjectScale(1000.0);
 	  
 	  camNode = new MatrixTransform;
-	  //Matrix cam0, cam1, cam2;
+	  Matrix cam0, cam1, cam2;
 	  //cam0.makeRotate(45 * pi / 180, Vec3(0,0,1));
 	  //cam1.makeRotate(45 * pi / 180, Vec3(1,0,0));
-	  //cam2.makeTranslate(10,0,-600);
-	  //camNode->setMatrix(cam0 * cam1 * cam2);
+	  cam2.makeTranslate(10,0,-600);
+	  camNode->setMatrix(cam0 * cam1 * cam2);
     PluginHelper::getScene()->addChild( camNode );
     
     //camNode->addChild( of->addBox( Vec3(0,0,600), 150, false, true ) );
@@ -107,6 +108,8 @@ void setupScene( ObjectFactory * of ) {
     
     camNode->addChild( of->addBox( Vec3(0,0,-5000), Vec3(5000,5000,5000), Vec4(1.0,1.0,1.0,1.0), false, true ) );
     
+    handBall = of->addHand( Vec3(50,50,50), Vec4(1,1,1,1) );
+    camNode->addChild( handBall );
     
     // Light 0
     lightSS = PluginHelper::getScene()->getOrCreateStateSet();
@@ -143,12 +146,10 @@ void PhysicsLab::preFrame()
       camNode->addChild( sphereMat );
       numSpheres++;
     }
-    
-    // Movement
-    Matrix m = camNode->getMatrix();
-    if (frame % 30 == 0) std::cout << m;
-    m.setTrans(-nh->getMovement().getTrans()-Vec3(0,2900,150));
-    camNode->setMatrix(m);
+    Matrixd handMat = PluginHelper::getHandMat(0);
+    handBall->setMatrix(handMat);
+    of->updateHand(handMat);
+    //cout << "HandButtonMask: " << PluginHelper::getHandButtonMask(0) << endl;
     
     if (frame % 60 == 0) {
       std::cout << "FPS: " << 1.0/PluginHelper::getLastFrameDuration() << std::endl;

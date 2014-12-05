@@ -1,20 +1,27 @@
 SET(LIB_NAME PhysicsLab)
 SET(PLUGIN_HEADERS
     PhysicsLab.h
+    BulletHandler.h
+    AntiGravityField.h
+    ObjectFactory.h
+    NavHandler.h
 )
 
 ADD_LIBRARY(${LIB_NAME}
     "SHARED"
     ${PLUGIN_HEADERS}
     PhysicsLab.cpp
+    BulletHandler.cpp
+    ObjectFactory.cpp
+    NavHandler.cpp
 )
 
 FIND_PACKAGE(Bullet)
 INCLUDE_DIRECTORIES(${BULLET_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(${LIB_NAME} ${BULLET_LIBRARIES})
 
 INCLUDE_DIRECTORIES(${OSG_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(${LIB_NAME} ${OSG_LIBRARIES})
-TARGET_LINK_LIBRARIES(${LIB_NAME} ${BULLET_LIBRARIES})
 
 ADD_CALVR_LIBRARIES(${LIB_NAME})
 

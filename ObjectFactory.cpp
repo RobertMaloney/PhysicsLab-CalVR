@@ -470,3 +470,27 @@ BulletHandler* ObjectFactory::getBulletHandler() {
   return bh;
 }
 
+MatrixTransform* ObjectFactory::addHand( Vec3 halfLengths, Vec4 color ) {
+  MatrixTransform* mt = new MatrixTransform;
+  
+  Geode * box = new Geode;
+  Box * boxprim = new Box( Vec3(0,0,0), 1);
+  boxprim->setHalfLengths( halfLengths );
+  ShapeDrawable * sd = new ShapeDrawable(boxprim);
+  sd->setColor( color );
+  box->addDrawable(sd);
+  mt->addChild( box );
+  
+  handId = bh->addBox( Vec3(0,0,0), halfLengths, false );
+  
+  numObjects++;
+  m_objects.push_back( mt );
+  m_physid.push_back( handId );
+  
+  return mt;
+}
+
+void ObjectFactory::updateHand( Matrixd & m ) {
+  bh->setWorldTransform( handId, m );
+}
+

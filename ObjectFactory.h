@@ -36,6 +36,8 @@ class ObjectFactory {
     MatrixTransform* addAntiGravityField( Vec3, double, Vec3, bool );
     MatrixTransform* addPlane( Vec3, double, Vec3, bool, bool );
     PositionAttitudeTransform* addLight( Vec3, Vec4, Vec4, Vec4, StateSet* );
+    MatrixTransform* addHand( Vec3, Vec4 );
+    void updateHand( Matrixd & );
     
     void stepSim( double );
     BulletHandler* getBulletHandler();
@@ -45,6 +47,8 @@ class ObjectFactory {
     int numObjects;
     std::vector<MatrixTransform*> m_objects;
     std::vector<int> m_physid;
+    int handId;
+    MatrixTransform* handMat;
     
     int numLights;
 };
