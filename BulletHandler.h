@@ -5,20 +5,29 @@
 #include <osg/Vec3>
 #include <osg/Matrixd>
 #include <btBulletDynamicsCommon.h>
+#include <btBulletCollisionCommon.h>
+#include "AntiGravityField.h"
 
 class BulletHandler
 {
+  
   public:
     BulletHandler();
     virtual ~BulletHandler();
-    int addBox( osg::Vec3 origin, double halfwidth );
-    int addSphere( osg::Vec3 origin, double radius );
+    int addBox( osg::Vec3, osg::Vec3, bool );
+    int addSeesaw( osg::Vec3, osg::Vec3, bool );
+    int addSphere( osg::Vec3, double, bool );
+    int addOpenBox( osg::Vec3, osg::Vec3, double, bool );
+    int addHollowBox( osg::Vec3, osg::Vec3, bool );
+    void addAntiGravityField(osg::Vec3, double, osg::Vec3);
     void setLinearVelocity( int, osg::Vec3 );
     osg::Vec3 getLinearVelocity( int );
     void translate( int, osg::Vec3 );
+    void setGravity( osg::Vec3 );
     
-    void stepSim();
-    osg::Matrixd getWorldTransform( int );
+    void stepSim( double );
+    btDiscreteDynamicsWorld* getDynamicsWorld();
+    void getWorldTransform( int, osg::Matrixd& );
     
   private:
     btBroadphaseInterface* broadphase;
@@ -29,5 +38,8 @@ class BulletHandler
     
     std::vector<btRigidBody*> rbodies;
     int numRigidBodies;
+    
+    std::vector<AntiGravityField*> avfs;
+    int numavfs;
 };
 #endif

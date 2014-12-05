@@ -22,14 +22,14 @@
 #include <osg/StateSet>
 
 // Local
-#include "BulletHandler.h"
+#include "ObjectFactory.h"
+#include "NavHandler.h"
 
 class PhysicsLab : public cvr::CVRPlugin, public cvr::MenuCallback
 {
   protected:
     cvr::SubMenu * _mainMenu, * _loadMenu;
     cvr::MenuButton * _removeButton;
-    //NavigationHandler * navHandle;
 
   public:
     PhysicsLab();
@@ -40,6 +40,7 @@ class PhysicsLab : public cvr::CVRPlugin, public cvr::MenuCallback
     bool processEvent(cvr::InteractionEvent*);
     
   private:
-    BulletHandler * bh;
+    ObjectFactory * of;
+    NavHandler * nh;
 };
 #endif
