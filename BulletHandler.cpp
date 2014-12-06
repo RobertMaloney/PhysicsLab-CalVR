@@ -369,12 +369,11 @@ void BulletHandler::setWorldTransform( int id, osg::Matrixd & boxm ) {
         osg::Quat q = boxm.getRotate();
         btQuaternion btq( q.x(), q.y(), q.z(), q.w() );
         btTransform btt(btq, btv);
-        std::cout << *(osg::Vec3*) &btt.getOrigin() << "\n";
+        //std::cout << *(osg::Vec3*) &btt.getOrigin() << "\n";
         rbodies[id]->setCenterOfMassTransform(btt);
         ms->setWorldTransform(btt);
         rbodies[id]->setLinearVelocity(btv);
         dynamicsWorld->synchronizeSingleMotionState( rbodies[id] );
-        std::cout << rbodies[id]->getCenterOfMassPosition().y() << "\n";
     }
 }
 

@@ -68,10 +68,12 @@ void setupScene( ObjectFactory * of ) {
 	  
 	  camNode = new MatrixTransform;
 	  Matrix cam0, cam1, cam2;
-	  //cam0.makeRotate(45 * pi / 180, Vec3(0,0,1));
-	  //cam1.makeRotate(45 * pi / 180, Vec3(1,0,0));
-	  cam2.makeTranslate(10,0,-600);
-	  camNode->setMatrix(cam0 * cam1 * cam2);
+	  //cam0.makeRotate(90 * pi / 180, Vec3(1,0,0));
+	  //cam1.makeRotate(-45 * pi / 180, Vec3(0,1,0));
+	  cam2.makeTranslate(0,400,-800);
+	  cam2 = cam0 * cam1 * cam2;
+	  camNode->setMatrix(cam2);
+	  PluginHelper::setObjectMatrix( cam2 );
     PluginHelper::getScene()->addChild( camNode );
     
     //camNode->addChild( of->addBox( Vec3(0,0,600), 150, false, true ) );
@@ -129,7 +131,9 @@ PhysicsLab::~PhysicsLab()
 
 void PhysicsLab::preFrame()
 {
+	  
     frame = (frame + 1) % 720;
+    cout << frame << "\n";
     static bool startSim = false;
     if (frame == 120) startSim = true;
     
@@ -146,8 +150,12 @@ void PhysicsLab::preFrame()
       camNode->addChild( sphereMat );
       numSpheres++;
     }
-    Matrixd handMat = PluginHelper::getHandMat(0);
-    handBall->setMatrix(handMat);
+    
+    Matrixd os = PluginHelper::getObjectMatrix();
+    os.invert_4x4(os);
+    Matrixd handMat = PluginHelper::getHandMat(0) * os;
+    handMat.setTrans( handMat.getTrans() + handMat.getRotate()*Vec3(0,500,0) );
+    handBall->setMatrix(handMat*PluginHelper::getHeadMat());
     of->updateHand(handMat);
     //cout << "HandButtonMask: " << PluginHelper::getHandButtonMask(0) << endl;
     
