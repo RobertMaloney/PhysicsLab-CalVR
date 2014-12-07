@@ -18,6 +18,7 @@ class BulletHandler
     int addBox( osg::Vec3, osg::Vec3, bool );
     int addSeesaw( osg::Vec3, osg::Vec3, bool );
     int addSphere( osg::Vec3, double, bool );
+    int addCylinder( osg::Vec3, osg::Vec3, bool );
     int addOpenBox( osg::Vec3, osg::Vec3, double, bool );
     int addHollowBox( osg::Vec3, osg::Vec3, bool );
     void addAntiGravityField(osg::Vec3, double, osg::Vec3);
@@ -31,6 +32,10 @@ class BulletHandler
     void getWorldTransform( int, osg::Matrixd& );
     void setWorldTransform( int, osg::Matrixd& );
     
+    void addHand(osg::Vec3, osg::Vec3);
+    void moveHand( osg::Matrixd& );
+    void updateButtonState( int bs );
+    
   private:
     btBroadphaseInterface* broadphase;
     btDefaultCollisionConfiguration* btcc;
@@ -43,5 +48,6 @@ class BulletHandler
     
     std::vector<AntiGravityField*> avfs;
     int numavfs;
+    
 };
 #endif

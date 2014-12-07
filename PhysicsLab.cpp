@@ -82,7 +82,7 @@ void setupScene( ObjectFactory * of ) {
     of->addHollowBox( Vec3(0,0,0), Vec3(1000,1000,1000), false, false );
     
     // open box (pit)
-    //camNode->addChild( of->addOpenBox( Vec3(0,0,101), Vec3(600,600,100), 20.0, false, true ) );
+    camNode->addChild( of->addOpenBox( Vec3(0,0,101), Vec3(600,600,100), 20.0, false, true ) );
     
     // fill bounding box with spheres
     /*
@@ -103,14 +103,14 @@ void setupScene( ObjectFactory * of ) {
     }
     */
     of->addAntiGravityField( Vec3(0,0,0), 1000.0, Vec3(0,0,-5000), true );
-    of->addAntiGravityField( Vec3(0,0,200), 200.0, Vec3(0,0,0), true );
+    of->addAntiGravityField( Vec3(0,0,300), 300.0, Vec3(0,0,0), true );
     
     // seesaw
     //camNode->addChild( of->addSeesaw( Vec3(0,0,400), Vec3(150,500,10), Vec4(1.0,1.0,1.0,1.0), true, true ) );
     
     camNode->addChild( of->addBox( Vec3(0,0,-5000), Vec3(5000,5000,5000), Vec4(1.0,1.0,1.0,1.0), false, true ) );
     
-    handBall = of->addHand( Vec3(50,50,50), Vec4(1,1,1,1) );
+    handBall = of->addCylinderHand( 25, 300, Vec4(1,1,1,1) );
     camNode->addChild( handBall );
     
     // Light 0
@@ -133,24 +133,25 @@ void PhysicsLab::preFrame()
 {
 	  
     frame = (frame + 1) % 720;
-    cout << frame << "\n";
     static bool startSim = false;
     if (frame == 120) startSim = true;
     
-    static int numSpheres = 0;
-    
+    // Initialize Ball Pit over time
     Vec4 colorArray[4];
     colorArray[0] = Vec4(1.0,1.0,1.0,1.0);
     colorArray[1] = Vec4(1.0,0.0,0.0,1.0);
     colorArray[2] = Vec4(0.0,1.0,0.0,1.0);
     colorArray[3] = Vec4(0.0,0.0,1.0,1.0);
     
+    static int numSpheres = 0;
     if (frame % 3 == 0 && startSim && numSpheres < NUM_SPHERES) {
       MatrixTransform* sphereMat = of->addSphere( Vec3((float) (rand() % 400 - 200), (float) (rand() % 400 - 200),500.), 50, colorArray[numSpheres%4], true, true );
+      //MatrixTransform* sphereMat = of->addCylinder( Vec3((float) (rand() % 400 - 200), (float) (rand() % 400 - 200),500.), 25, 100, colorArray[numSpheres%4], true, true );
       camNode->addChild( sphereMat );
       numSpheres++;
     }
     
+    // Stylus code
     Matrixd os = PluginHelper::getObjectMatrix();
     os.invert_4x4(os);
     Matrixd handMat = PluginHelper::getHandMat(0) * os;

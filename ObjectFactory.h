@@ -31,12 +31,14 @@ class ObjectFactory {
     MatrixTransform* addBox( Vec3, Vec3, Vec4, bool, bool );
     MatrixTransform* addSeesaw( Vec3, Vec3, Vec4, bool, bool );
     MatrixTransform* addSphere( Vec3, double, Vec4, bool, bool );
+    MatrixTransform* addCylinder( Vec3, double, double, Vec4, bool, bool );
     MatrixTransform* addOpenBox( Vec3, Vec3, double, bool, bool );
     MatrixTransform* addHollowBox( Vec3, Vec3, bool, bool );
     MatrixTransform* addAntiGravityField( Vec3, double, Vec3, bool );
     MatrixTransform* addPlane( Vec3, double, Vec3, bool, bool );
     PositionAttitudeTransform* addLight( Vec3, Vec4, Vec4, Vec4, StateSet* );
-    MatrixTransform* addHand( Vec3, Vec4 );
+    MatrixTransform* addBoxHand( Vec3, Vec4 );
+    MatrixTransform* addCylinderHand( double, double, Vec4 );
     void updateHand( Matrixd & );
     
     void stepSim( double );
@@ -46,6 +48,7 @@ class ObjectFactory {
     BulletHandler* bh;
     int numObjects;
     std::vector<MatrixTransform*> m_objects;
+    std::vector<ShapeDrawable*> m_shaped;
     std::vector<int> m_physid;
     int handId;
     MatrixTransform* handMat;

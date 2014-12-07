@@ -70,6 +70,7 @@ MatrixTransform* ObjectFactory::addSphere( Vec3 pos, double radius, Vec4 diffuse
     Geode * tsphere = new Geode;
     Sphere * tsphereprim = new Sphere( Vec3(0,0,0), radius);
     ShapeDrawable * sphered = new ShapeDrawable(tsphereprim);
+    tsphere->getOrCreateStateSet()->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
     sphered->setColor( diffuse );
     tsphere->addDrawable(sphered);
     mt->addChild(tsphere);
@@ -78,6 +79,30 @@ MatrixTransform* ObjectFactory::addSphere( Vec3 pos, double radius, Vec4 diffuse
   numObjects++;
   m_objects.push_back( mt );
   m_physid.push_back( bh->addSphere( pos, radius, phys ) );
+  
+  return mt;
+}
+
+MatrixTransform* ObjectFactory::addCylinder( Vec3 pos, double radius, double height, Vec4 color, bool phys, bool render) {
+  MatrixTransform* mt = new MatrixTransform;
+  
+  if (render) {
+    Matrixd cylm;
+    cylm.makeTranslate(pos);
+    mt->setMatrix( cylm );
+    
+    Geode * tcyl = new Geode;
+    Cylinder * tcylprim = new Cylinder( Vec3(0,0,0), radius, height);
+    ShapeDrawable * cyld = new ShapeDrawable(tcylprim);
+    tcyl->getOrCreateStateSet()->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+    cyld->setColor( color );
+    tcyl->addDrawable(cyld);
+    mt->addChild(tcyl);
+  }
+  
+  numObjects++;
+  m_objects.push_back( mt );
+  m_physid.push_back( bh->addCylinder( pos, Vec3(height, radius, 0), phys ) );
   
   return mt;
 }
@@ -470,7 +495,7 @@ BulletHandler* ObjectFactory::getBulletHandler() {
   return bh;
 }
 
-MatrixTransform* ObjectFactory::addHand( Vec3 halfLengths, Vec4 color ) {
+MatrixTransform* ObjectFactory::addBoxHand( Vec3 halfLengths, Vec4 color ) {
   MatrixTransform* mt = new MatrixTransform;
   
   Geode * box = new Geode;
@@ -482,6 +507,25 @@ MatrixTransform* ObjectFactory::addHand( Vec3 halfLengths, Vec4 color ) {
   mt->addChild( box );
   
   handId = bh->addBox( Vec3(0,0,0), halfLengths, false );
+  
+  numObjects++;
+  m_objects.push_back( mt );
+  m_physid.push_back( handId );
+  
+  return mt;
+}
+
+MatrixTransform* ObjectFactory::addCylinderHand( double radius, double height, Vec4 color ) {
+  MatrixTransform* mt = new MatrixTransform;
+  Geode * tcyl = new Geode;
+  Cylinder * tcylprim = new Cylinder( Vec3(0,0,0), radius, height);
+  ShapeDrawable * cyld = new ShapeDrawable(tcylprim);
+  tcyl->getOrCreateStateSet()->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+  cyld->setColor( color );
+  tcyl->addDrawable(cyld);
+  mt->addChild(tcyl);
+  
+  handId = bh->addCylinder( Vec3(0,0,0), Vec3(height, radius, 0), true );
   
   numObjects++;
   m_objects.push_back( mt );

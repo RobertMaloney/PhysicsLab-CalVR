@@ -3,6 +3,8 @@
 
 int clnumavfs = 0;
 std::vector<AntiGravityField*> clavfs;
+int buttonState = 0, prevButtonState = 0;
+AntiGravityField* hand;
 
 void ghostCallback (btDynamicsWorld *world, btScalar timeStep)
 {
@@ -13,6 +15,21 @@ void ghostCallback (btDynamicsWorld *world, btScalar timeStep)
             btRigidBody *pRigidBody = dynamic_cast<btRigidBody *>(clavfs[i]->getOverlappingObject(j));
             pRigidBody->setGravity( clavfs[i]->getGravity() );
         }
+    }
+    
+    // Grab Hand
+    if (buttonState != prevButtonState && buttonState == 2) {
+      btRigidBody *closest;
+      for(int i = 0; i < hand->getNumOverlappingObjects(); ++i) {
+          btRigidBody *pRigidBody = dynamic_cast<btRigidBody *>(clavfs[i]->getOverlappingObject(i));
+          if (!closest) closest = pRigidBody;
+          else {
+            btVector3 handPos = hand->getWorldTransform().getOrigin();
+            btVector3 closestPos = closest->getCenterOfMassTransform().getOrigin();
+            btVector3 newPos = pRigidBody->getCenterOfMassTransform().getOrigin();
+            if ((closestPos - handPos) > (newPos - handPos)) closest = pRigidBody;
+          }
+      }
     }
 }
 
@@ -309,6 +326,28 @@ int BulletHandler::addSphere( osg::Vec3 origin, double width, bool physEnabled )
     return numRigidBodies++;
 }
 
+int BulletHandler::addCylinder( osg::Vec3 origin, osg::Vec3 halfLengths, bool physEnabled ) {
+    btCollisionShape* cylShape = new btCylinderShapeZ( *(btVector3*) &halfLengths );
+    btDefaultMotionState* cylMotionState =
+        new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
+        
+    btRigidBody * cylRigidBody;
+    if (physEnabled) {
+        btVector3 cylInertia(0,0,0);
+        cylShape->calculateLocalInertia(btScalar(1), cylInertia);
+        btRigidBody::btRigidBodyConstructionInfo cylRigidBodyCI(1, cylMotionState, cylShape, cylInertia);
+        cylRigidBodyCI.m_linearSleepingThreshold = 50.0f;
+        cylRigidBody = new btRigidBody(cylRigidBodyCI);
+    } else {
+        btRigidBody::btRigidBodyConstructionInfo cylRigidBodyCI(0, cylMotionState, cylShape, btVector3(0,0,0));
+        cylRigidBody = new btRigidBody(cylRigidBodyCI);
+    }
+    dynamicsWorld->addRigidBody(cylRigidBody);
+    rbodies.push_back(cylRigidBody);
+    
+    return numRigidBodies++;
+}
+
 void BulletHandler::addAntiGravityField(osg::Vec3 pos, double halflength, osg::Vec3 grav) {
     btCollisionShape* ghostBox = new btBoxShape( btVector3(halflength,halflength,halflength) );
     AntiGravityField* avf = new AntiGravityField();
@@ -375,6 +414,38 @@ void BulletHandler::setWorldTransform( int id, osg::Matrixd & boxm ) {
         rbodies[id]->setLinearVelocity(btv);
         dynamicsWorld->synchronizeSingleMotionState( rbodies[id] );
     }
+}
+
+void BulletHandler::addHand(osg::Vec3 pos, osg::Vec3 halfLengths) {
+    btCollisionShape* ghostBox = new btCylinderShape( *(btVector3*) &halfLengths );
+    AntiGravityField* avf = new AntiGravityField();
+    avf->setGravity( btVector3(0,0,0) );
+    avf->setCollisionShape( ghostBox );
+    avf->setCollisionFlags(avf->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+    avf->setWorldTransform( btTransform(btQuaternion(0,0,0,1), *(btVector3*) &pos) );
+    dynamicsWorld->addCollisionObject(avf);
+    
+    hand = avf;
+}
+
+void BulletHandler::moveHand(osg::Matrixd & boxm ) {
+  if (!hand) return;
+    
+  osg::Vec3 t = boxm.getTrans();
+  btVector3 btv( t.x(), t.y(), t.z() );
+
+  osg::Quat q = boxm.getRotate();
+  btQuaternion btq( q.x(), q.y(), q.z(), q.w() );
+  btTransform btt(btq, btv);
+  //std::cout << *(osg::Vec3*) &btt.getOrigin() << "\n";
+  //hand->setCenterOfMassTransform(btt);
+  hand->setWorldTransform(btt);
+  //dynamicsWorld->synchronizeSingleMotionState( hand );
+}
+
+void BulletHandler::updateButtonState( int bs ) {
+  prevButtonState = buttonState;
+  buttonState = bs;
 }
 
 btDiscreteDynamicsWorld* BulletHandler::getDynamicsWorld() {
