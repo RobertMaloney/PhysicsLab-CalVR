@@ -15,7 +15,7 @@
 #include <osg/Vec3d>
 #include <osg/MatrixTransform>
 
-#define NUM_SPHERES 220
+#define NUM_SPHERES 10
 
 using namespace std;
 using namespace cvr;
@@ -103,14 +103,14 @@ void setupScene( ObjectFactory * of ) {
     }
     */
     of->addAntiGravityField( Vec3(0,0,0), 1000.0, Vec3(0,0,-5000), true );
-    of->addAntiGravityField( Vec3(0,0,300), 300.0, Vec3(0,0,0), true );
+    //of->addAntiGravityField( Vec3(0,0,300), 300.0, Vec3(0,0,0), true );
     
     // seesaw
     //camNode->addChild( of->addSeesaw( Vec3(0,0,400), Vec3(150,500,10), Vec4(1.0,1.0,1.0,1.0), true, true ) );
     
     camNode->addChild( of->addBox( Vec3(0,0,-5000), Vec3(5000,5000,5000), Vec4(1.0,1.0,1.0,1.0), false, true ) );
     
-    handBall = of->addCylinderHand( 25, 300, Vec4(1,1,1,1) );
+    handBall = of->addCylinderHand( 5, 700, Vec4(1,1,1,1) );
     camNode->addChild( handBall );
     
     // Light 0
@@ -156,9 +156,12 @@ void PhysicsLab::preFrame()
     os.invert_4x4(os);
     Matrixd handMat = PluginHelper::getHandMat(0) * os;
     handMat.setTrans( handMat.getTrans() + handMat.getRotate()*Vec3(0,500,0) );
-    handBall->setMatrix(handMat*PluginHelper::getHeadMat());
+    //handBall->setMatrix(handMat*PluginHelper::getHeadMat());
     of->updateHand(handMat);
     //cout << "HandButtonMask: " << PluginHelper::getHandButtonMask(0) << endl;
+    //of->updateButtonState( PluginHelper::getHandButtonMask(0) );
+    of->updateButtonState( nh->getButton() );
+    if (nh->getButton()) std::cout << "Stylus origin: " << handMat;
     
     if (frame % 60 == 0) {
       std::cout << "FPS: " << 1.0/PluginHelper::getLastFrameDuration() << std::endl;

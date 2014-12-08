@@ -40,6 +40,7 @@ class ObjectFactory {
     MatrixTransform* addBoxHand( Vec3, Vec4 );
     MatrixTransform* addCylinderHand( double, double, Vec4 );
     void updateHand( Matrixd & );
+    void updateButtonState( int );
     
     void stepSim( double );
     BulletHandler* getBulletHandler();

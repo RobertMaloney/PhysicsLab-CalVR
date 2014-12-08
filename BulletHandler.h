@@ -34,7 +34,7 @@ class BulletHandler
     
     void addHand(osg::Vec3, osg::Vec3);
     void moveHand( osg::Matrixd& );
-    void updateButtonState( int bs );
+    void updateButtonState( int );
     
   private:
     btBroadphaseInterface* broadphase;

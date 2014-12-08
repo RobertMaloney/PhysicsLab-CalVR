@@ -3,8 +3,11 @@
 
 int clnumavfs = 0;
 std::vector<AntiGravityField*> clavfs;
-int buttonState = 0, prevButtonState = 0;
+int buttonState = 0, prevButtonState = -1;
 AntiGravityField* hand;
+btRigidBody* closest;
+btVector3 initGrabPos;
+btVector3 distToStylus;
 
 void ghostCallback (btDynamicsWorld *world, btScalar timeStep)
 {
@@ -17,11 +20,39 @@ void ghostCallback (btDynamicsWorld *world, btScalar timeStep)
         }
     }
     
+    if (closest) closest->setGravity( btVector3(0,0,0) );
     // Grab Hand
-    if (buttonState != prevButtonState && buttonState == 2) {
-      btRigidBody *closest;
+    //std::cout << "ButtonState: " << buttonState << "\n";
+    if (buttonState != prevButtonState && hand) {
+        switch (buttonState) {
+            case 1:
+                std::cout << "Hand Origin: " << hand->getWorldTransform().getOrigin().x() << ", " << hand->getWorldTransform().getOrigin().y() << ", " << hand->getWorldTransform().getOrigin().z() << "\n";
+                std::cout << "Num Hand Collisions: " << hand->getNumOverlappingObjects() << "\n";
+                for(int i = 0; i < hand->getNumOverlappingObjects(); ++i) {
+                    btRigidBody *pRigidBody = dynamic_cast<btRigidBody *>(hand->getOverlappingObject(i));
+                    if (!closest) closest = pRigidBody;
+                    else {
+                      btVector3 handPos = hand->getWorldTransform().getOrigin();
+                      btVector3 closestPos = closest->getCenterOfMassTransform().getOrigin();
+                      btVector3 newPos = pRigidBody->getCenterOfMassTransform().getOrigin();
+                      if ((closestPos - handPos) > (newPos - handPos)) closest = pRigidBody;
+                    }
+                }
+                if (closest) {
+                  closest->setGravity( btVector3(0,0,0) );
+                  initGrabPos = closest->getCenterOfMassPosition();
+                  distToStylus = initGrabPos - hand->getWorldTransform().getOrigin();
+                }
+                break;
+            case 0:
+                closest = (btRigidBody*) 0;
+                break;
+        }
+    }
+    if (buttonState != prevButtonState && buttonState == 1 && hand) {
+      std::cout << "Num Hand Collisions: " << hand->getNumOverlappingObjects() << "\n";
       for(int i = 0; i < hand->getNumOverlappingObjects(); ++i) {
-          btRigidBody *pRigidBody = dynamic_cast<btRigidBody *>(clavfs[i]->getOverlappingObject(i));
+          btRigidBody *pRigidBody = dynamic_cast<btRigidBody *>(hand->getOverlappingObject(i));
           if (!closest) closest = pRigidBody;
           else {
             btVector3 handPos = hand->getWorldTransform().getOrigin();
@@ -417,7 +448,7 @@ void BulletHandler::setWorldTransform( int id, osg::Matrixd & boxm ) {
 }
 
 void BulletHandler::addHand(osg::Vec3 pos, osg::Vec3 halfLengths) {
-    btCollisionShape* ghostBox = new btCylinderShape( *(btVector3*) &halfLengths );
+    btCollisionShape* ghostBox = new btCylinderShapeZ( *(btVector3*) &halfLengths );
     AntiGravityField* avf = new AntiGravityField();
     avf->setGravity( btVector3(0,0,0) );
     avf->setCollisionShape( ghostBox );
@@ -425,6 +456,7 @@ void BulletHandler::addHand(osg::Vec3 pos, osg::Vec3 halfLengths) {
     avf->setWorldTransform( btTransform(btQuaternion(0,0,0,1), *(btVector3*) &pos) );
     dynamicsWorld->addCollisionObject(avf);
     
+    //if (hand) delete hand;
     hand = avf;
 }
 
@@ -440,7 +472,19 @@ void BulletHandler::moveHand(osg::Matrixd & boxm ) {
   //std::cout << *(osg::Vec3*) &btt.getOrigin() << "\n";
   //hand->setCenterOfMassTransform(btt);
   hand->setWorldTransform(btt);
-  //dynamicsWorld->synchronizeSingleMotionState( hand );
+  if (closest) {
+    btMotionState* ms = closest->getMotionState();
+    if (ms) {
+        btTransform btt(btq, btv);
+        //std::cout << *(osg::Vec3*) &btt.getOrigin() << "\n";
+        closest->setCenterOfMassTransform(btt);
+        ms->setWorldTransform(btt);
+        closest->setLinearVelocity(btVector3(0,0,0));
+        dynamicsWorld->synchronizeSingleMotionState( closest );
+    }
+    //btv = hand->getWorldTransform().getOrigin();
+    //std::cout << "GhostHand: " << btv.x() << ", " << btv.y() << ", " << btv.z() << "\n";
+  }
 }
 
 void BulletHandler::updateButtonState( int bs ) {

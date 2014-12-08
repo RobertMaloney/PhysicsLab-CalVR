@@ -525,16 +525,23 @@ MatrixTransform* ObjectFactory::addCylinderHand( double radius, double height, V
   tcyl->addDrawable(cyld);
   mt->addChild(tcyl);
   
-  handId = bh->addCylinder( Vec3(0,0,0), Vec3(height, radius, 0), true );
-  
+  bh->addHand( Vec3(0,0,0), Vec3(radius, 0, height) );
+  /*
   numObjects++;
   m_objects.push_back( mt );
   m_physid.push_back( handId );
-  
+  */
+  handMat = mt;
   return mt;
 }
 
 void ObjectFactory::updateHand( Matrixd & m ) {
-  bh->setWorldTransform( handId, m );
+  if (handMat) handMat->setMatrix( m );
+  //std::cout << "Stylus:\n" << m;
+  bh->moveHand( m );
+}
+
+void ObjectFactory::updateButtonState( int bs ) {
+  bh->updateButtonState( bs );
 }
 

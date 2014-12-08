@@ -30,6 +30,7 @@ class NavHandler {
     
     void keyEvent( KeyboardInteractionEvent * );
     Matrixd getMovement();
+    int getButton();
     
   private:
     bool goLeft, goRight, goUp, goDown, jumping;

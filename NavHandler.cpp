@@ -51,6 +51,10 @@ void NavHandler::keyEvent( KeyboardInteractionEvent * kp ) {
   }
 }
 
+int NavHandler::getButton() {
+  return (int) jumping;
+}
+
 Matrixd NavHandler::getMovement() {
   static bool inAir = false;
   Vec3 x_vec(MAX_VELOCITY,0,0);
