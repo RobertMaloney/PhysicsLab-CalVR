@@ -15,7 +15,7 @@
 #include <osg/Vec3d>
 #include <osg/MatrixTransform>
 
-#define NUM_SPHERES 10
+#define NUM_SPHERES 220
 
 using namespace std;
 using namespace cvr;
@@ -110,7 +110,7 @@ void setupScene( ObjectFactory * of ) {
     
     camNode->addChild( of->addBox( Vec3(0,0,-5000), Vec3(5000,5000,5000), Vec4(1.0,1.0,1.0,1.0), false, true ) );
     
-    handBall = of->addCylinderHand( 5, 700, Vec4(1,1,1,1) );
+    handBall = of->addCylinderHand( 5, 4000, Vec4(1,1,1,1) );
     camNode->addChild( handBall );
     
     // Light 0
@@ -145,23 +145,10 @@ void PhysicsLab::preFrame()
     
     static int numSpheres = 0;
     if (frame % 3 == 0 && startSim && numSpheres < NUM_SPHERES) {
-      MatrixTransform* sphereMat = of->addSphere( Vec3((float) (rand() % 400 - 200), (float) (rand() % 400 - 200),500.), 50, colorArray[numSpheres%4], true, true );
-      //MatrixTransform* sphereMat = of->addCylinder( Vec3((float) (rand() % 400 - 200), (float) (rand() % 400 - 200),500.), 25, 100, colorArray[numSpheres%4], true, true );
+      MatrixTransform* sphereMat = of->addSphere( Vec3((float) (rand() % 400 - 200), (float) (rand() % 400 - 200),500.), 35, colorArray[numSpheres%4], true, true );
       camNode->addChild( sphereMat );
       numSpheres++;
     }
-    
-    // Stylus code
-    Matrixd os = PluginHelper::getObjectMatrix();
-    os.invert_4x4(os);
-    Matrixd handMat = PluginHelper::getHandMat(0) * os;
-    handMat.setTrans( handMat.getTrans() + handMat.getRotate()*Vec3(0,500,0) );
-    //handBall->setMatrix(handMat*PluginHelper::getHeadMat());
-    of->updateHand(handMat);
-    //cout << "HandButtonMask: " << PluginHelper::getHandButtonMask(0) << endl;
-    //of->updateButtonState( PluginHelper::getHandButtonMask(0) );
-    of->updateButtonState( nh->getButton() );
-    if (nh->getButton()) std::cout << "Stylus origin: " << handMat;
     
     if (frame % 60 == 0) {
       std::cout << "FPS: " << 1.0/PluginHelper::getLastFrameDuration() << std::endl;
@@ -171,12 +158,24 @@ void PhysicsLab::preFrame()
 }
 
 bool PhysicsLab::processEvent(InteractionEvent * event) {
-    static bool lightswitch = true;
+    static bool grabbing = false;
     
     KeyboardInteractionEvent * kp;
+    TrackedButtonInteractionEvent * he;
     if ((kp = event->asKeyboardEvent()) != NULL) {
         nh->keyEvent( kp );
+    } else if ((he = event->asTrackedButtonEvent()) != NULL) {
+      Matrixd os = PluginHelper::getObjectMatrix();
+      Matrixd handMat = PluginHelper::getHandMat(0) * PluginHelper::getObjectToWorldTransform() * os * PluginHelper::getWorldToObjectTransform();
+      if (he->getHand() == 0 && he->getButton() == 0) {
+        if (he->getInteraction() == BUTTON_DOWN && !grabbing)
+            grabbing = of->grabObject( handMat, camNode );
+        else if (he->getInteraction() == BUTTON_UP) {
+            grabbing = false;
+            of->releaseObject();
+        }
+      }
     }
 
-    return false;
+    return true;
 }

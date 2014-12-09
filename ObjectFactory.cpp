@@ -523,25 +523,74 @@ MatrixTransform* ObjectFactory::addCylinderHand( double radius, double height, V
   tcyl->getOrCreateStateSet()->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
   cyld->setColor( color );
   tcyl->addDrawable(cyld);
-  mt->addChild(tcyl);
+  //mt->addChild(tcyl);
   
-  bh->addHand( Vec3(0,0,0), Vec3(radius, 0, height) );
-  /*
+  bh->addHand( Vec3(0,0,0), Vec3(radius, 0, height/2) );
+  /*handId = bh->addCylinder( Vec3(0,0,0), Vec3(radius, 0, height/2), false );
+  
   numObjects++;
   m_objects.push_back( mt );
   m_physid.push_back( handId );
-  */
-  handMat = mt;
+  
+  handMat = mt;*/
   return mt;
 }
 
 void ObjectFactory::updateHand( Matrixd & m ) {
-  if (handMat) handMat->setMatrix( m );
+  //if (handMat) handMat->setMatrix( m );
   //std::cout << "Stylus:\n" << m;
   bh->moveHand( m );
+  //bh->setWorldTransform( handId, m );
 }
 
 void ObjectFactory::updateButtonState( int bs ) {
   bh->updateButtonState( bs );
+}
+
+bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
+  Vec3 pointerEnd(0.f,1000000.f,0.f);
+  pointerEnd = stylus.preMult( pointerEnd );
+  //std::cout << stylus.getTrans() << "\n";
+  //std::cout << pointerEnd << "\n";
+  
+  osgUtil::IntersectVisitor objFinder;
+  
+  LineSegment* pointerLine = new LineSegment();
+  pointerLine->set( stylus.getTrans(), pointerEnd );
+  objFinder.addLineSegment( pointerLine );
+  root->accept( objFinder );
+  
+  osgUtil::IntersectVisitor::HitList hl = objFinder.getHitList(pointerLine);
+  if (hl.empty()) return false;
+  
+  osgUtil::Hit closest = hl.front();
+  std::string className = closest.getDrawable()->className();
+  //std::cout << "Drawable Class: " << className << "\n";
+  if (className.compare("ShapeDrawable") == 0) {
+    ((ShapeDrawable*) closest.getDrawable())->setColor( Vec4(0,0,0,1) );
+    NodePath np = closest.getNodePath();
+    grabbedMatrix = (MatrixTransform*) np[np.size()-2];
+    for (int i = 0; i < numObjects; ++i) {
+      if (m_objects[i] == grabbedMatrix) {
+        std::cout << "Grabbing Geode.\n";
+        //grabbedMatrix = m_objects[i];
+        grabbedId = m_physid[i];
+        break;
+      }
+    }
+    if (grabbedId == -1) { grabbedMatrix = (MatrixTransform*) 0; return false; }
+    else {
+      grabbedRelativePosition = grabbedMatrix.getTrans() - stylus.getTrans();
+    }
+    return true;
+  }
+  
+  return false;
+}
+
+void ObjectFactory::releaseObject() {
+  std::cout << "Releasing...\n";
+  grabbedMatrix = (MatrixTransform*) 0;
+  grabbedId = -1;
 }
 

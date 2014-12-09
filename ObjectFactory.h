@@ -17,6 +17,8 @@
 #include <osg/Material>
 #include <osg/StateSet>
 #include <osg/LightSource>
+#include <osgUtil/IntersectVisitor>
+#include <osg/LineSegment>
 
 // Local
 #include "BulletHandler.h"
@@ -41,6 +43,8 @@ class ObjectFactory {
     MatrixTransform* addCylinderHand( double, double, Vec4 );
     void updateHand( Matrixd & );
     void updateButtonState( int );
+    bool grabObject( Matrixd&, Node* );
+    void releaseObject();
     
     void stepSim( double );
     BulletHandler* getBulletHandler();
@@ -53,6 +57,9 @@ class ObjectFactory {
     std::vector<int> m_physid;
     int handId;
     MatrixTransform* handMat;
+    MatrixTransform* grabbedMatrix;
+    Vec3 grabbedRelativePosition;
+    int grabbedId;
     
     int numLights;
 };
