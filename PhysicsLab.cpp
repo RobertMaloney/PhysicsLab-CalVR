@@ -134,8 +134,10 @@ void PhysicsLab::preFrame()
 	  
     frame = (frame + 1) % 720;
     static bool startSim = false;
-    if (frame == 120) startSim = true;
-    
+    if (frame == 120) {
+      startSim = true;
+      camNode->addChild(of->addBox( Vec3((float) (rand() % 400 - 200), (float) (rand() % 400 - 200),500.), Vec3(50,50,50), Vec4(1,1,1,1), true, true ));
+    }
     // Initialize Ball Pit over time
     Vec4 colorArray[4];
     colorArray[0] = Vec4(1.0,1.0,1.0,1.0);
@@ -153,7 +155,11 @@ void PhysicsLab::preFrame()
     if (frame % 60 == 0) {
       std::cout << "FPS: " << 1.0/PluginHelper::getLastFrameDuration() << std::endl;
     }
-    
+    Matrixd os = PluginHelper::getObjectMatrix();
+    os.invert_4x4(os);
+    Matrixd handMat = PluginHelper::getHandMat(0) * os;
+    of->updateHand( handMat );
+      
     if (startSim) of->stepSim( PluginHelper::getLastFrameDuration() );
 }
 

@@ -8,6 +8,8 @@ ObjectFactory::ObjectFactory() {
   bh = new BulletHandler();
   numObjects = 0;
   numLights = 0;
+  grabbedId = -1;
+  grabbedMatrix = 0;
 }
 
 ObjectFactory::~ObjectFactory() {
@@ -539,7 +541,13 @@ MatrixTransform* ObjectFactory::addCylinderHand( double radius, double height, V
 void ObjectFactory::updateHand( Matrixd & m ) {
   //if (handMat) handMat->setMatrix( m );
   //std::cout << "Stylus:\n" << m;
-  bh->moveHand( m );
+  //bh->moveHand( m );
+  if (grabbedMatrix) {
+    std::cout << "old:\n" << m.getTrans() << "\n";
+    m.setTrans( m.getTrans() + m.getRotate() * grabbedRelativePosition );
+    std::cout << "new:\n" << m.getTrans() << "\n";
+    bh->setWorldTransform( grabbedId, m );
+  }
   //bh->setWorldTransform( handId, m );
 }
 
@@ -580,7 +588,7 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
     }
     if (grabbedId == -1) { grabbedMatrix = (MatrixTransform*) 0; return false; }
     else {
-      grabbedRelativePosition = grabbedMatrix.getTrans() - stylus.getTrans();
+      grabbedRelativePosition = Vec3(0,(grabbedMatrix->getMatrix().getTrans() - stylus.getTrans()).length(),0);
     }
     return true;
   }
