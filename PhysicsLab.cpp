@@ -84,29 +84,12 @@ void setupScene( ObjectFactory * of ) {
     // open box (pit)
     camNode->addChild( of->addOpenBox( Vec3(0,0,101), Vec3(600,600,100), 20.0, false, true ) );
     
-    // fill bounding box with spheres
-    /*
-    for( int i = 0; i < NUM_SPHERES; ++i) {
-        //Vec3 sphereStart1(-500,-100,500);
-        //Vec3 sphereStart3(-500,200,800);
-        Vec3 sphereStart(
-            ((float) (i/10%10) / 10) * 1000 - 500,
-            ((float) (i%10) / 10) * 1000 - 500,
-            (i/100) * 150 + 300
-        );
-        MatrixTransform* sphereMat = of->addSphere( sphereStart, 50, true, true );
-        camNode->addChild( sphereMat );
-        
-        if (false) {
-            sphereMat->addChild( of->addBox( Vec3(100,0,0), 50, false, true ) );
-        }
-    }
-    */
     of->addAntiGravityField( Vec3(0,0,0), 1000.0, Vec3(0,0,-5000), true );
-    //of->addAntiGravityField( Vec3(0,0,300), 300.0, Vec3(0,0,0), true );
+    camNode->addChild( of->addAntiGravityField( Vec3(0,0,200), 200.0, Vec3(0,0,50), true ) );
     
     // seesaw
-    //camNode->addChild( of->addSeesaw( Vec3(0,0,400), Vec3(150,500,10), Vec4(1.0,1.0,1.0,1.0), true, true ) );
+    camNode->addChild( of->addSeesaw( Vec3(500,0,350), Vec3(75,250,5), Vec4(0.0,1.0,0.0,1.0), true, true ) );
+    camNode->addChild( of->addSeesaw( Vec3(-500,0,350), Vec3(75,250,5), Vec4(1.0,0.0,0.0,1.0), true, true ) );
     
     camNode->addChild( of->addBox( Vec3(0,0,-5000), Vec3(5000,5000,5000), Vec4(1.0,1.0,1.0,1.0), false, true ) );
     
@@ -136,7 +119,7 @@ void PhysicsLab::preFrame()
     static bool startSim = false;
     if (frame == 120) {
       startSim = true;
-      camNode->addChild(of->addBox( Vec3((float) (rand() % 400 - 200), (float) (rand() % 400 - 200),500.), Vec3(50,50,50), Vec4(1,1,1,1), true, true ));
+      //camNode->addChild(of->addBox( Vec3((float) (rand() % 400 - 200), (float) (rand() % 400 - 200),500.), Vec3(50,50,50), Vec4(1,1,1,1), true, true ));
     }
     // Initialize Ball Pit over time
     Vec4 colorArray[4];

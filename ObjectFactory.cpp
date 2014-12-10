@@ -44,7 +44,8 @@ MatrixTransform* ObjectFactory::addSeesaw( Vec3 pos, Vec3 halfLengths, Vec4 diff
   
   if (render) {
     Geode * seesaw = new Geode;
-    Box * seesawPrim = new Box( Vec3(0,0,0), halfLengths.x(), halfLengths.y(), halfLengths.z() );
+    Box * seesawPrim = new Box( Vec3(0,0,0), 1,1,1 );
+    seesawPrim->setHalfLengths( halfLengths );
     ShapeDrawable * seesawsd = new ShapeDrawable(seesawPrim);
     seesaw->addDrawable(seesawsd);
     seesawsd->setColor(diffuse);
@@ -391,6 +392,19 @@ MatrixTransform* ObjectFactory::addHollowBox( Vec3 pos, Vec3 halfLengths, bool p
 MatrixTransform* ObjectFactory::addAntiGravityField( Vec3 pos, double halfLength, Vec3 grav, bool phys ) {
   MatrixTransform* mt = new MatrixTransform;
   
+  Geode * box = new Geode;
+  Box * boxprim = new Box( Vec3(0,0,0), halfLength*2, halfLength*2, halfLength*2);
+  ShapeDrawable * sd = new ShapeDrawable(boxprim);
+  box->addDrawable(sd);
+  Matrix boxm;
+  boxm.makeTranslate(pos);
+  mt->setMatrix( boxm );
+  mt->addChild( box );
+  StateSet* ss = box->getOrCreateStateSet();
+  PolygonMode* pg = new PolygonMode(PolygonMode::FRONT_AND_BACK, PolygonMode::LINE);
+  ss->setAttributeAndModes(pg, StateAttribute::ON | StateAttribute::OVERRIDE);
+  box->setNodeMask(~2);
+    
   bh->addAntiGravityField( pos, halfLength, grav );
   numObjects++;
   m_objects.push_back( mt );
@@ -539,17 +553,15 @@ MatrixTransform* ObjectFactory::addCylinderHand( double radius, double height, V
 }
 
 void ObjectFactory::updateHand( Matrixd & m ) {
-  //if (handMat) handMat->setMatrix( m );
-  //std::cout << "Stylus:\n" << m;
-  //bh->moveHand( m );
   if (grabbedMatrix) {
-    std::cout << "old: " << m.getTrans() << "\n";
-    std::cout << "moving: " << grabbedRelativePosition << "\n";
     m.setTrans( m.getTrans() + m.getRotate() * grabbedRelativePosition );
-    std::cout << "new: " << m.getTrans() << "\n";
+    if (m.getTrans() != grabbedCurrentPosition) {
+      grabbedLastPosition = grabbedCurrentPosition;
+      grabbedCurrentPosition = m.getTrans();
+      //std::cout << "New pos: " << grabbedCurrentPosition << "\n";
+    }
     bh->setWorldTransform( grabbedId, m );
   }
-  //bh->setWorldTransform( handId, m );
 }
 
 void ObjectFactory::updateButtonState( int bs ) {
@@ -563,7 +575,7 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
   //std::cout << pointerEnd << "\n";
   
   osgUtil::IntersectVisitor objFinder;
-  
+  objFinder.setTraversalMask(2);
   LineSegment* pointerLine = new LineSegment();
   pointerLine->set( stylus.getTrans(), pointerEnd );
   objFinder.addLineSegment( pointerLine );
@@ -576,30 +588,35 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
   std::string className = closest.getDrawable()->className();
   //std::cout << "Drawable Class: " << className << "\n";
   if (className.compare("ShapeDrawable") == 0) {
-    ((ShapeDrawable*) closest.getDrawable())->setColor( Vec4(0,0,0,1) );
-    NodePath np = closest.getNodePath();
-    grabbedMatrix = (MatrixTransform*) np[np.size()-2];
-    for (int i = 0; i < numObjects; ++i) {
-      if (m_objects[i] == grabbedMatrix) {
-        std::cout << "Grabbing Geode.\n";
-        //grabbedMatrix = m_objects[i];
-        grabbedId = m_physid[i];
-        break;
+    std::string shapeName =  ((ShapeDrawable*) closest.getDrawable())->getShape()->className();
+    if (shapeName.compare("Sphere") == 0) {
+      ((ShapeDrawable*) closest.getDrawable())->setColor( Vec4(0,0,0,1) );
+      NodePath np = closest.getNodePath();
+      grabbedMatrix = (MatrixTransform*) np[np.size()-2];
+      for (int i = 0; i < numObjects; ++i) {
+        if (m_objects[i] == grabbedMatrix) {
+          std::cout << "Grabbing Geode.\n";
+          //grabbedMatrix = m_objects[i];
+          grabbedId = m_physid[i];
+          break;
+        }
       }
+      if (grabbedId == -1) { grabbedMatrix = (MatrixTransform*) 0; return false; }
+      else {
+        grabbedRelativePosition = Vec3(0,(grabbedMatrix->getMatrix().getTrans() - stylus.getTrans() + ((MatrixTransform*) root)->getMatrix().getTrans()).length(),0);
+      }
+      return true;
     }
-    if (grabbedId == -1) { grabbedMatrix = (MatrixTransform*) 0; return false; }
-    else {
-      grabbedRelativePosition = Vec3(0,(grabbedMatrix->getMatrix().getTrans() - stylus.getTrans() + Vec3(0, 400, -800)).length(),0);
-    }
-    return true;
   }
   
   return false;
 }
 
 void ObjectFactory::releaseObject() {
-  std::cout << "Releasing...\n";
+  //std::cout << "Releasing...\n";
+  if (grabbedId != -1) bh->setLinearVelocity(grabbedId, Vec3(0,0,0));
   grabbedMatrix = (MatrixTransform*) 0;
+  //std::cout << "Throwing at Tangent: " << grabbedCurrentPosition-grabbedLastPosition << "\n";
   grabbedId = -1;
 }
 

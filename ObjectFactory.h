@@ -19,6 +19,7 @@
 #include <osg/LightSource>
 #include <osgUtil/IntersectVisitor>
 #include <osg/LineSegment>
+#include <osg/PolygonMode>
 
 // Local
 #include "BulletHandler.h"
@@ -59,6 +60,7 @@ class ObjectFactory {
     MatrixTransform* handMat;
     MatrixTransform* grabbedMatrix;
     Vec3 grabbedRelativePosition;
+    Vec3 grabbedCurrentPosition, grabbedLastPosition;
     int grabbedId;
     
     int numLights;
