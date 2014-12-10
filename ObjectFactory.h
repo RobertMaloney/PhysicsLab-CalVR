@@ -59,6 +59,8 @@ class ObjectFactory {
     int handId;
     MatrixTransform* handMat;
     MatrixTransform* grabbedMatrix;
+    ShapeDrawable* grabbedShape;
+    Vec4 grabbedColor;
     Vec3 grabbedRelativePosition;
     Vec3 grabbedCurrentPosition, grabbedLastPosition;
     int grabbedId;

@@ -590,7 +590,6 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
   if (className.compare("ShapeDrawable") == 0) {
     std::string shapeName =  ((ShapeDrawable*) closest.getDrawable())->getShape()->className();
     if (shapeName.compare("Sphere") == 0) {
-      ((ShapeDrawable*) closest.getDrawable())->setColor( Vec4(0,0,0,1) );
       NodePath np = closest.getNodePath();
       grabbedMatrix = (MatrixTransform*) np[np.size()-2];
       for (int i = 0; i < numObjects; ++i) {
@@ -604,6 +603,9 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
       if (grabbedId == -1) { grabbedMatrix = (MatrixTransform*) 0; return false; }
       else {
         grabbedRelativePosition = Vec3(0,(grabbedMatrix->getMatrix().getTrans() - stylus.getTrans() + ((MatrixTransform*) root)->getMatrix().getTrans()).length(),0);
+        grabbedShape = ((ShapeDrawable*) closest.getDrawable());
+        grabbedColor = grabbedShape->getColor();
+        grabbedShape->setColor( Vec4(0,0,0,1) );
       }
       return true;
     }
@@ -614,8 +616,12 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
 
 void ObjectFactory::releaseObject() {
   //std::cout << "Releasing...\n";
-  if (grabbedId != -1) bh->setLinearVelocity(grabbedId, Vec3(0,0,0));
-  grabbedMatrix = (MatrixTransform*) 0;
+  if (grabbedId != -1) {
+    bh->setLinearVelocity(grabbedId, Vec3(0,0,0));
+    grabbedShape->setColor(grabbedColor);
+  }
+  grabbedMatrix = 0;
+  grabbedShape = 0;
   //std::cout << "Throwing at Tangent: " << grabbedCurrentPosition-grabbedLastPosition << "\n";
   grabbedId = -1;
 }
