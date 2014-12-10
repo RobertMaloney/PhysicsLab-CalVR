@@ -543,9 +543,10 @@ void ObjectFactory::updateHand( Matrixd & m ) {
   //std::cout << "Stylus:\n" << m;
   //bh->moveHand( m );
   if (grabbedMatrix) {
-    std::cout << "old:\n" << m.getTrans() << "\n";
+    std::cout << "old: " << m.getTrans() << "\n";
+    std::cout << "moving: " << grabbedRelativePosition << "\n";
     m.setTrans( m.getTrans() + m.getRotate() * grabbedRelativePosition );
-    std::cout << "new:\n" << m.getTrans() << "\n";
+    std::cout << "new: " << m.getTrans() << "\n";
     bh->setWorldTransform( grabbedId, m );
   }
   //bh->setWorldTransform( handId, m );
@@ -588,7 +589,7 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
     }
     if (grabbedId == -1) { grabbedMatrix = (MatrixTransform*) 0; return false; }
     else {
-      grabbedRelativePosition = Vec3(0,(grabbedMatrix->getMatrix().getTrans() - stylus.getTrans()).length(),0);
+      grabbedRelativePosition = Vec3(0,(grabbedMatrix->getMatrix().getTrans() - stylus.getTrans() + Vec3(0, 400, -800)).length(),0);
     }
     return true;
   }
