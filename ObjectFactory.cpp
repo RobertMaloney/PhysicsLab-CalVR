@@ -555,11 +555,12 @@ MatrixTransform* ObjectFactory::addCylinderHand( double radius, double height, V
 void ObjectFactory::updateHand( Matrixd & m ) {
   if (grabbedMatrix) {
     m.setTrans( m.getTrans() + m.getRotate() * grabbedRelativePosition );
-    if (m.getTrans() != grabbedCurrentPosition) {
+    //std::cout << "New pos: " << (m.getTrans() - grabbedCurrentPosition).length2() << "\n";
+    /*if ((m.getTrans() - grabbedCurrentPosition).length2() > 0.1) {
       grabbedLastPosition = grabbedCurrentPosition;
       grabbedCurrentPosition = m.getTrans();
       //std::cout << "New pos: " << grabbedCurrentPosition << "\n";
-    }
+    }*/
     bh->setWorldTransform( grabbedId, m );
   }
 }
