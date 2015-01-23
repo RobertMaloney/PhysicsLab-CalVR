@@ -355,7 +355,7 @@ MatrixTransform* ObjectFactory::addOpenBox( Vec3 pos, Vec3 halfLengths, double i
       normalIndexArray->push_back(5);
     }
     
-    openBoxShape->setNormalIndices(normalIndexArray);
+    //openBoxShape->setNormalIndices(normalIndexArray);
     openBoxShape->setNormalBinding( Geometry::BIND_PER_VERTEX );
     
     osg::Vec4Array* colors = new osg::Vec4Array;
@@ -442,7 +442,7 @@ MatrixTransform* ObjectFactory::addPlane( Vec3 pos, double halfLength, Vec3 norm
     normalIndexArray->push_back(0);
     normalIndexArray->push_back(0);
     normalIndexArray->push_back(0);
-    floorGeometry->setNormalIndices(normalIndexArray);
+    //floorGeometry->setNormalIndices(normalIndexArray);
     
     DrawElementsUInt* floorFace = new DrawElementsUInt(PrimitiveSet::QUADS, 0);
     floorFace->push_back(3);

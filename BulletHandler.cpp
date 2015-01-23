@@ -54,20 +54,9 @@ BulletHandler::~BulletHandler() {
 int BulletHandler::addBox( osg::Vec3 origin, osg::Vec3 halfLengths, bool physEnabled ) {
     btCollisionShape* boxShape = new btBoxShape( *(btVector3*) &halfLengths );
     btDefaultMotionState* boxMotionState =
-        new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(origin.x(), origin.y(), origin.z())));
+        new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
         
-    btRigidBody * boxRigidBody;
-    if (physEnabled) {
-        btVector3 boxInertia(0,0,0);
-        boxShape->calculateLocalInertia(btScalar(1), boxInertia);
-        btRigidBody::btRigidBodyConstructionInfo boxRigidBodyCI(1, boxMotionState, boxShape, boxInertia);
-        boxRigidBody = new btRigidBody(boxRigidBodyCI);
-    } else {
-        btRigidBody::btRigidBodyConstructionInfo boxRigidBodyCI(0, boxMotionState, boxShape, btVector3(0,0,0));
-        boxRigidBody = new btRigidBody(boxRigidBodyCI);
-    }
-    dynamicsWorld->addRigidBody(boxRigidBody);
-    rbodies.push_back(boxRigidBody);
+    addRigid( boxShape, boxMotionState, physEnabled );
     
     return numRigidBodies++;
 }
@@ -77,16 +66,7 @@ int BulletHandler::addSeesaw( osg::Vec3 origin, osg::Vec3 halflengths, bool phys
     btDefaultMotionState* boxMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
         
-    btRigidBody * boxRigidBody;
-    if (physEnabled) {
-        btVector3 boxInertia(0,0,0);
-        boxShape->calculateLocalInertia(btScalar(1), boxInertia);
-        btRigidBody::btRigidBodyConstructionInfo boxRigidBodyCI(1, boxMotionState, boxShape, boxInertia);
-        boxRigidBody = new btRigidBody(boxRigidBodyCI);
-    } else {
-        btRigidBody::btRigidBodyConstructionInfo boxRigidBodyCI(0, boxMotionState, boxShape, btVector3(0,0,0));
-        boxRigidBody = new btRigidBody(boxRigidBodyCI);
-    }
+    btRigidBody* boxRigidBody = addRigid( boxShape, boxMotionState, physEnabled );
     
     if (halflengths.x() > halflengths.y()) {
         btHingeConstraint* hinge = new btHingeConstraint(*boxRigidBody,btVector3(0,0,0),btVector3(0,1,0),true);
@@ -95,8 +75,6 @@ int BulletHandler::addSeesaw( osg::Vec3 origin, osg::Vec3 halflengths, bool phys
         btHingeConstraint* hinge = new btHingeConstraint(*boxRigidBody,btVector3(0,0,0),btVector3(1,0,0),true);
 		    dynamicsWorld->addConstraint(hinge);
 		}
-    dynamicsWorld->addRigidBody(boxRigidBody);
-    rbodies.push_back(boxRigidBody);
     
     return numRigidBodies++;
 }
@@ -208,18 +186,7 @@ int BulletHandler::addOpenBox( osg::Vec3 origin, osg::Vec3 halflengths, double i
     btDefaultMotionState* boxMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*) &origin));
         
-    btRigidBody * boxRigidBody;
-    if (physEnabled) {
-        btVector3 boxInertia(0,0,0);
-        boxShape->calculateLocalInertia(btScalar(1), boxInertia);
-        btRigidBody::btRigidBodyConstructionInfo boxRigidBodyCI(1, boxMotionState, boxShape, boxInertia);
-        boxRigidBody = new btRigidBody(boxRigidBodyCI);
-    } else {
-        btRigidBody::btRigidBodyConstructionInfo boxRigidBodyCI(0, boxMotionState, boxShape, btVector3(0,0,0));
-        boxRigidBody = new btRigidBody(boxRigidBodyCI);
-    }
-    dynamicsWorld->addRigidBody(boxRigidBody);
-    rbodies.push_back(boxRigidBody);
+    addRigid( boxShape, boxMotionState, physEnabled );
     
     return numRigidBodies++;
 }
@@ -276,18 +243,7 @@ int BulletHandler::addHollowBox( osg::Vec3 origin, osg::Vec3 halflengths, bool p
     btDefaultMotionState* boxMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(origin.x(), origin.y(), origin.z())));
         
-    btRigidBody * boxRigidBody;
-    if (physEnabled) {
-        btVector3 boxInertia(0,0,0);
-        boxShape->calculateLocalInertia(btScalar(1), boxInertia);
-        btRigidBody::btRigidBodyConstructionInfo boxRigidBodyCI(1, boxMotionState, boxShape, boxInertia);
-        boxRigidBody = new btRigidBody(boxRigidBodyCI);
-    } else {
-        btRigidBody::btRigidBodyConstructionInfo boxRigidBodyCI(0, boxMotionState, boxShape, btVector3(0,0,0));
-        boxRigidBody = new btRigidBody(boxRigidBodyCI);
-    }
-    dynamicsWorld->addRigidBody(boxRigidBody);
-    rbodies.push_back(boxRigidBody);
+    btRigidBody * boxRigidBody = addRigid( boxShape, boxMotionState, physEnabled );
     
     return numRigidBodies++;
 }
@@ -297,19 +253,7 @@ int BulletHandler::addSphere( osg::Vec3 origin, double width, bool physEnabled )
     btDefaultMotionState* sphereMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
         
-    btRigidBody * sphereRigidBody;
-    if (physEnabled) {
-        btVector3 sphereInertia(0,0,0);
-        sphereShape->calculateLocalInertia(btScalar(1), sphereInertia);
-        btRigidBody::btRigidBodyConstructionInfo sphereRigidBodyCI(1, sphereMotionState, sphereShape, sphereInertia);
-        sphereRigidBodyCI.m_linearSleepingThreshold = 50.0f;
-        sphereRigidBody = new btRigidBody(sphereRigidBodyCI);
-    } else {
-        btRigidBody::btRigidBodyConstructionInfo sphereRigidBodyCI(0, sphereMotionState, sphereShape, btVector3(0,0,0));
-        sphereRigidBody = new btRigidBody(sphereRigidBodyCI);
-    }
-    dynamicsWorld->addRigidBody(sphereRigidBody);
-    rbodies.push_back(sphereRigidBody);
+    btRigidBody * sphereRigidBody = addRigid( sphereShape, sphereMotionState, physEnabled );
     
     return numRigidBodies++;
 }
@@ -319,19 +263,7 @@ int BulletHandler::addCylinder( osg::Vec3 origin, osg::Vec3 halfLengths, bool ph
     btDefaultMotionState* cylMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
         
-    btRigidBody * cylRigidBody;
-    if (physEnabled) {
-        btVector3 cylInertia(0,0,0);
-        cylShape->calculateLocalInertia(btScalar(1), cylInertia);
-        btRigidBody::btRigidBodyConstructionInfo cylRigidBodyCI(1, cylMotionState, cylShape, cylInertia);
-        cylRigidBodyCI.m_linearSleepingThreshold = 50.0f;
-        cylRigidBody = new btRigidBody(cylRigidBodyCI);
-    } else {
-        btRigidBody::btRigidBodyConstructionInfo cylRigidBodyCI(0, cylMotionState, cylShape, btVector3(0,0,0));
-        cylRigidBody = new btRigidBody(cylRigidBodyCI);
-    }
-    dynamicsWorld->addRigidBody(cylRigidBody);
-    rbodies.push_back(cylRigidBody);
+    btRigidBody * cylRigidBody = addRigid( cylShape, cylMotionState, physEnabled );
     
     return numRigidBodies++;
 }
@@ -457,4 +389,24 @@ btDiscreteDynamicsWorld* BulletHandler::getDynamicsWorld() {
 
 void BulletHandler::setGravity( osg::Vec3 g ) {
     dynamicsWorld->setGravity( *(btVector3*) &g );
+}
+
+btRigidBody* BulletHandler::addRigid( btCollisionShape* shape, btDefaultMotionState* ms, bool physEnabled ) {
+    btRigidBody * _rb;
+    
+    if (physEnabled) {
+        btVector3 inertia(0,0,0);
+        shape->calculateLocalInertia(btScalar(1), inertia);
+        btRigidBody::btRigidBodyConstructionInfo _rbci(1, ms, shape, inertia);
+        _rbci.m_linearSleepingThreshold = 50.0f;
+        _rb = new btRigidBody(_rbci);
+    } else {
+        btRigidBody::btRigidBodyConstructionInfo _rbci(0, ms, shape, btVector3(0,0,0));
+        _rb = new btRigidBody(_rbci);
+    }
+    
+    dynamicsWorld->addRigidBody(_rb);
+    rbodies.push_back(_rb);
+    
+    return _rb;
 }

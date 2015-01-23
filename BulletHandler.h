@@ -43,6 +43,7 @@ class BulletHandler
     btSequentialImpulseConstraintSolver* btsolver;
     btDiscreteDynamicsWorld* dynamicsWorld;
     
+    btRigidBody* addRigid( btCollisionShape*, btDefaultMotionState*, bool );
     std::vector<btRigidBody*> rbodies;
     int numRigidBodies;
     
