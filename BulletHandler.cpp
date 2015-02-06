@@ -81,109 +81,18 @@ int BulletHandler::addSeesaw( osg::Vec3 origin, osg::Vec3 halflengths, bool phys
     return numRigidBodies++;
 }
 
-int BulletHandler::addOpenBox( osg::Vec3 origin, osg::Vec3 halflengths, double innerWidth, bool physEnabled ) {
+int BulletHandler::addOpenBox( osg::Vec3 origin, osg::Vec3 halfLengths, double innerWidth, bool physEnabled ) {
+    btCollisionShape* xShape = new btBoxShape( btVector3(innerWidth/2, halfLengths.y(), halfLengths.z()) );
+    btCollisionShape* yShape = new btBoxShape( btVector3(halfLengths.x(), innerWidth/2, halfLengths.z()) );
+    btCollisionShape* zShape = new btBoxShape( btVector3(halfLengths.x(), halfLengths.y(), innerWidth/2) );
+    
     btCompoundShape* boxShape = new btCompoundShape();
-    std::vector<btVector3> planePoints [14];
     
-    // Left Plane - Outer
-    planePoints[0].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[0].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[0].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[0].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    
-    // Back Plane - Outer
-    planePoints[1].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[1].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[1].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[1].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    
-    // Right Plane - Outer
-    planePoints[2].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[2].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[2].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[2].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    
-    // Front Plane - Outer
-    planePoints[3].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[3].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[3].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[3].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    
-    // Bottom Plane - Outer
-    planePoints[4].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[4].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[4].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[4].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    
-    if (innerWidth > 0.0) {
-    
-        // Left Plane - Inner
-        planePoints[5].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() - halflengths.y() + innerWidth, origin.z() - halflengths.z() + innerWidth));
-        planePoints[5].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() - halflengths.y() + innerWidth, origin.z() + halflengths.z()) );
-        planePoints[5].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() - halflengths.y() + innerWidth, origin.z() + halflengths.z()) );
-        planePoints[5].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() - halflengths.y() + innerWidth, origin.z() - halflengths.z() + innerWidth));
-    
-        // Back Plane - Inner
-        planePoints[6].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() - halflengths.y() + innerWidth, origin.z() - halflengths.z() + innerWidth) );
-        planePoints[6].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() - halflengths.y() + innerWidth, origin.z() + halflengths.z()) );
-        planePoints[6].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() + halflengths.y() - innerWidth, origin.z() + halflengths.z()) );
-        planePoints[6].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() + halflengths.y() - innerWidth, origin.z() - halflengths.z() + innerWidth) );
-        
-        // Right Plane - Inner
-        planePoints[7].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() + halflengths.y() - innerWidth, origin.z() - halflengths.z() + innerWidth) );
-        planePoints[7].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() + halflengths.y() - innerWidth, origin.z() + halflengths.z()) );
-        planePoints[7].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() + halflengths.y() - innerWidth, origin.z() + halflengths.z()) );
-        planePoints[7].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() + halflengths.y() - innerWidth, origin.z() - halflengths.z() + innerWidth) );
-        
-        // Front Plane - Inner
-        planePoints[8].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() - halflengths.y() + innerWidth, origin.z() - halflengths.z() + innerWidth) );
-        planePoints[8].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() - halflengths.y() + innerWidth, origin.z() + halflengths.z()) );
-        planePoints[8].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() + halflengths.y() - innerWidth, origin.z() + halflengths.z()) );
-        planePoints[8].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() + halflengths.y() - innerWidth, origin.z() - halflengths.z() + innerWidth) );
-        
-        // Bottom Plane - Inner
-        
-        planePoints[9].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() + halflengths.y() - innerWidth, origin.z() - halflengths.z() + innerWidth) );
-        planePoints[9].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() - halflengths.y() + innerWidth, origin.z() - halflengths.z() + innerWidth) );
-        planePoints[9].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() - halflengths.y() + innerWidth, origin.z() - halflengths.z() + innerWidth) );
-        planePoints[9].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() + halflengths.y() - innerWidth, origin.z() - halflengths.z() + innerWidth) );
-        // Left Plane - Connect
-        planePoints[10].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-        planePoints[10].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-        planePoints[10].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-        planePoints[10].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-    
-        // Back Plane - Connect
-        planePoints[11].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-        planePoints[11].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y() + innerWidth, origin.z() + halflengths.z()) );
-        planePoints[11].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y() - innerWidth, origin.z() + halflengths.z()) );
-        planePoints[11].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-        
-        // Right Plane - Connect
-        planePoints[12].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-        planePoints[12].push_back( btVector3( origin.x() - halflengths.x() + innerWidth, origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-        planePoints[12].push_back( btVector3( origin.x() + halflengths.x() - innerWidth, origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-        planePoints[12].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-        
-        // Front Plane - Connect
-        planePoints[13].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-        planePoints[13].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y() + innerWidth, origin.z() + halflengths.z()) );
-        planePoints[13].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y() - innerWidth, origin.z() + halflengths.z()) );
-        planePoints[13].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-        
-        
-    }
-    
-    btConvexHullShape * boxPlanes [((innerWidth > 0) ? 14 : 5)];
-    for (int i = 0; i < ((innerWidth > 0) ? 14 : 5); ++i) {
-        if (i < 14 ) {
-        boxPlanes[i] = new btConvexHullShape();
-        for (int j = 0; j < 4; ++j)
-            boxPlanes[i]->addPoint( planePoints[i][j] );
-            
-        boxShape->addChildShape (btTransform::getIdentity(), boxPlanes[i]);
-        }
-    }
+    boxShape->addChildShape( btTransform(btQuaternion(0,0,0,1), -btVector3(halfLengths.x() - innerWidth / 2, 0, 0)), xShape);
+    boxShape->addChildShape( btTransform(btQuaternion(0,0,0,1), btVector3(halfLengths.x() - innerWidth / 2, 0, 0)), xShape);
+    boxShape->addChildShape( btTransform(btQuaternion(0,0,0,1), -btVector3(0, halfLengths.y() - innerWidth / 2, 0)), yShape);
+    boxShape->addChildShape( btTransform(btQuaternion(0,0,0,1), btVector3(0, halfLengths.y() - innerWidth / 2, 0)), yShape);
+    boxShape->addChildShape( btTransform(btQuaternion(0,0,0,1), -btVector3(0, 0, halfLengths.z() - innerWidth / 2)), zShape);
     
     btDefaultMotionState* boxMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*) &origin));
@@ -193,54 +102,20 @@ int BulletHandler::addOpenBox( osg::Vec3 origin, osg::Vec3 halflengths, double i
     return numRigidBodies++;
 }
 
-int BulletHandler::addHollowBox( osg::Vec3 origin, osg::Vec3 halflengths, bool physEnabled ) {
+int BulletHandler::addHollowBox( osg::Vec3 origin, osg::Vec3 halfLengths, bool physEnabled ) {
+    const float innerWidth = 1.0f;
+    btCollisionShape* xShape = new btBoxShape( btVector3(innerWidth/2, halfLengths.y(), halfLengths.z()) );
+    btCollisionShape* yShape = new btBoxShape( btVector3(halfLengths.x(), innerWidth/2, halfLengths.z()) );
+    btCollisionShape* zShape = new btBoxShape( btVector3(halfLengths.x(), halfLengths.y(), innerWidth/2) );
+    
     btCompoundShape* boxShape = new btCompoundShape();
-    std::vector<btVector3> planePoints [6];
     
-    // Left Plane
-    planePoints[0].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[0].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[0].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[0].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    
-    // Back Plane
-    planePoints[1].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[1].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[1].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[1].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    
-    // Right Plane
-    planePoints[2].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[2].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[2].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[2].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    
-    // Front Plane
-    planePoints[3].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[3].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[3].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[3].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    
-    // Top Plane
-    planePoints[4].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[4].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[4].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() + halflengths.z()) );
-    planePoints[4].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() + halflengths.z()) );
-    
-    // Bottom Plane
-    planePoints[5].push_back( btVector3( origin.x() - halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[5].push_back( btVector3( origin.x() - halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[5].push_back( btVector3( origin.x() + halflengths.x(), origin.y() - halflengths.y(), origin.z() - halflengths.z()) );
-    planePoints[5].push_back( btVector3( origin.x() + halflengths.x(), origin.y() + halflengths.y(), origin.z() - halflengths.z()) );
-    
-    btConvexHullShape * boxPlanes [6];
-    for (int i = 0; i < 6; ++i) {
-        boxPlanes[i] = new btConvexHullShape();
-        for (int j = 0; j < 4; ++j)
-            boxPlanes[i]->addPoint( planePoints[i][j] );
-            
-        boxShape->addChildShape (btTransform::getIdentity(), boxPlanes[i]);
-    }
+    boxShape->addChildShape( btTransform(btQuaternion(0,0,0,1), -btVector3(halfLengths.x() - innerWidth / 2, 0, 0)), xShape);
+    boxShape->addChildShape( btTransform(btQuaternion(0,0,0,1), btVector3(halfLengths.x() - innerWidth / 2, 0, 0)), xShape);
+    boxShape->addChildShape( btTransform(btQuaternion(0,0,0,1), -btVector3(0, halfLengths.y() - innerWidth / 2, 0)), yShape);
+    boxShape->addChildShape( btTransform(btQuaternion(0,0,0,1), btVector3(0, halfLengths.y() - innerWidth / 2, 0)), yShape);
+    boxShape->addChildShape( btTransform(btQuaternion(0,0,0,1), -btVector3(0, 0, halfLengths.z() - innerWidth / 2)), zShape);
+    boxShape->addChildShape( btTransform(btQuaternion(0,0,0,1), btVector3(0, 0, halfLengths.z() - innerWidth / 2)), zShape);
     
     btDefaultMotionState* boxMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(origin.x(), origin.y(), origin.z())));
