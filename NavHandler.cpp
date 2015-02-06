@@ -5,7 +5,7 @@ NavHandler::NavHandler( BulletHandler * bfact, Vec3 start ) {
   goLeft = goRight = goUp = goDown = jumping = false;
   
   bh = bfact;
-  person = bh->addBox( start, Vec3(50,50,200), true);
+  //person = bh->addBox( start, Vec3(50,50,200), true);
 }
 
 NavHandler::~NavHandler() {}

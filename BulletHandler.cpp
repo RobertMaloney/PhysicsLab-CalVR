@@ -9,6 +9,8 @@ btRigidBody* closest;
 btVector3 initGrabPos;
 btVector3 distToStylus;
 
+CollisionType normalCollides = (CollisionType) (COL_NORMAL | COL_SPHERE);
+
 void ghostCallback (btDynamicsWorld *world, btScalar timeStep)
 {
     // AVF
@@ -51,12 +53,12 @@ BulletHandler::~BulletHandler() {
     delete btcd;
 }
 
-int BulletHandler::addBox( osg::Vec3 origin, osg::Vec3 halfLengths, bool physEnabled ) {
+int BulletHandler::addBox( osg::Vec3 origin, osg::Vec3 halfLengths, osg::Quat quat, bool physEnabled ) {
     btCollisionShape* boxShape = new btBoxShape( *(btVector3*) &halfLengths );
     btDefaultMotionState* boxMotionState =
-        new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
+        new btDefaultMotionState(btTransform(btQuaternion(quat.x(), quat.y(), quat.z(), quat.w()), *(btVector3*)&origin));
         
-    addRigid( boxShape, boxMotionState, physEnabled );
+    addRigid( boxShape, boxMotionState, COL_NORMAL, normalCollides, physEnabled );
     
     return numRigidBodies++;
 }
@@ -66,7 +68,7 @@ int BulletHandler::addSeesaw( osg::Vec3 origin, osg::Vec3 halflengths, bool phys
     btDefaultMotionState* boxMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
         
-    btRigidBody* boxRigidBody = addRigid( boxShape, boxMotionState, physEnabled );
+    btRigidBody* boxRigidBody = addRigid( boxShape, boxMotionState, COL_NORMAL, normalCollides, physEnabled );
     
     if (halflengths.x() > halflengths.y()) {
         btHingeConstraint* hinge = new btHingeConstraint(*boxRigidBody,btVector3(0,0,0),btVector3(0,1,0),true);
@@ -186,7 +188,7 @@ int BulletHandler::addOpenBox( osg::Vec3 origin, osg::Vec3 halflengths, double i
     btDefaultMotionState* boxMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*) &origin));
         
-    addRigid( boxShape, boxMotionState, physEnabled );
+    addRigid( boxShape, boxMotionState, COL_NORMAL, normalCollides, physEnabled );
     
     return numRigidBodies++;
 }
@@ -243,7 +245,7 @@ int BulletHandler::addHollowBox( osg::Vec3 origin, osg::Vec3 halflengths, bool p
     btDefaultMotionState* boxMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(origin.x(), origin.y(), origin.z())));
         
-    btRigidBody * boxRigidBody = addRigid( boxShape, boxMotionState, physEnabled );
+    btRigidBody * boxRigidBody = addRigid( boxShape, boxMotionState, COL_NORMAL, normalCollides, physEnabled );
     
     return numRigidBodies++;
 }
@@ -253,7 +255,7 @@ int BulletHandler::addSphere( osg::Vec3 origin, double width, bool physEnabled )
     btDefaultMotionState* sphereMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
         
-    btRigidBody * sphereRigidBody = addRigid( sphereShape, sphereMotionState, physEnabled );
+    btRigidBody * sphereRigidBody = addRigid( sphereShape, sphereMotionState, COL_SPHERE, (CollisionType) (normalCollides | COL_WALL), physEnabled );
     
     return numRigidBodies++;
 }
@@ -263,13 +265,13 @@ int BulletHandler::addCylinder( osg::Vec3 origin, osg::Vec3 halfLengths, bool ph
     btDefaultMotionState* cylMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
         
-    btRigidBody * cylRigidBody = addRigid( cylShape, cylMotionState, physEnabled );
+    btRigidBody * cylRigidBody = addRigid( cylShape, cylMotionState, COL_NORMAL, normalCollides, physEnabled );
     
     return numRigidBodies++;
 }
 
-void BulletHandler::addAntiGravityField(osg::Vec3 pos, double halflength, osg::Vec3 grav) {
-    btCollisionShape* ghostBox = new btBoxShape( btVector3(halflength,halflength,halflength) );
+void BulletHandler::addAntiGravityField(osg::Vec3 pos, osg::Vec3 halfLengths, osg::Vec3 grav) {
+    btCollisionShape* ghostBox = new btBoxShape( *(btVector3*) &halfLengths );
     AntiGravityField* avf = new AntiGravityField();
     avf->setGravity( *(btVector3*) &grav );
     avf->setCollisionShape( ghostBox );
@@ -281,6 +283,15 @@ void BulletHandler::addAntiGravityField(osg::Vec3 pos, double halflength, osg::V
     clavfs.push_back(avf);
     numavfs++;
     clnumavfs++;
+}
+
+void BulletHandler::addInvisibleWall( osg::Vec3 origin, osg::Vec3 halfLengths, int collisionFlag ) {
+    btCollisionShape* boxShape = new btBoxShape( *(btVector3*) &halfLengths );
+    btDefaultMotionState* boxMotionState =
+        new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
+        
+    addRigid( boxShape, boxMotionState, COL_WALL, (CollisionType) collisionFlag, false );
+    rbodies.pop_back();
 }
 
 void BulletHandler::setLinearVelocity( int id, osg::Vec3 vel ) {
@@ -331,13 +342,18 @@ void BulletHandler::setWorldTransform( int id, osg::Matrixd & boxm ) {
         osg::Quat q = boxm.getRotate();
         btQuaternion btq( q.x(), q.y(), q.z(), q.w() );
         btq *= bt90;
-        btTransform btt(btq, btv);
+        
+        btTransform btt( btQuaternion(0,0,0,1), btv);
         //std::cout << *(osg::Vec3*) &btt.getOrigin() << "\n";
         rbodies[id]->setCenterOfMassTransform(btt);
         ms->setWorldTransform(btt);
-        rbodies[id]->setLinearVelocity(btv);
+        rbodies[id]->setGravity(btVector3(0,0,0));
         dynamicsWorld->synchronizeSingleMotionState( rbodies[id] );
     }
+}
+
+void BulletHandler::activate( int id ) {
+  rbodies[id]->activate();
 }
 
 void BulletHandler::moveHand(osg::Matrixd & boxm ) {
@@ -391,7 +407,7 @@ void BulletHandler::setGravity( osg::Vec3 g ) {
     dynamicsWorld->setGravity( *(btVector3*) &g );
 }
 
-btRigidBody* BulletHandler::addRigid( btCollisionShape* shape, btDefaultMotionState* ms, bool physEnabled ) {
+btRigidBody* BulletHandler::addRigid( btCollisionShape* shape, btDefaultMotionState* ms, CollisionType collisionId, CollisionType collidesWith, bool physEnabled ) {
     btRigidBody * _rb;
     
     if (physEnabled) {
@@ -405,7 +421,7 @@ btRigidBody* BulletHandler::addRigid( btCollisionShape* shape, btDefaultMotionSt
         _rb = new btRigidBody(_rbci);
     }
     
-    dynamicsWorld->addRigidBody(_rb);
+    dynamicsWorld->addRigidBody(_rb, collisionId, collidesWith);
     rbodies.push_back(_rb);
     
     return _rb;

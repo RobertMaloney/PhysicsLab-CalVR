@@ -16,11 +16,12 @@ ObjectFactory::~ObjectFactory() {
   delete bh;
 }
 
-MatrixTransform* ObjectFactory::addBox( Vec3 pos, Vec3 halfLengths, Vec4 diffuse, bool phys = true, bool render = true ) {
+MatrixTransform* ObjectFactory::addBox( Vec3 pos, Vec3 halfLengths, Quat quat, Vec4 diffuse, bool phys = true, bool render = true ) {
   MatrixTransform* mt = new MatrixTransform;
   
   if ( render ) {
     Geode * box = new Geode;
+    box->setNodeMask(~2);
     Box * boxprim = new Box( Vec3(0,0,0), 1);
     boxprim->setHalfLengths( halfLengths );
     ShapeDrawable * sd = new ShapeDrawable(boxprim);
@@ -28,13 +29,14 @@ MatrixTransform* ObjectFactory::addBox( Vec3 pos, Vec3 halfLengths, Vec4 diffuse
     box->addDrawable(sd);
     Matrix boxm;
     boxm.makeTranslate(pos);
+    boxm.setRotate(quat);
     mt->setMatrix( boxm );
     mt->addChild( box );
   }
   
   numObjects++;
   m_objects.push_back( mt );
-  m_physid.push_back( bh->addBox( pos, halfLengths, phys ) );
+  m_physid.push_back( bh->addBox( pos, halfLengths, quat, phys ) );
   
   return mt;
 }
@@ -60,6 +62,10 @@ MatrixTransform* ObjectFactory::addSeesaw( Vec3 pos, Vec3 halfLengths, Vec4 diff
   m_physid.push_back( bh->addSeesaw( pos, halfLengths, phys ) );
   
   return mt;
+}
+
+void ObjectFactory::addInvisibleWall( Vec3 pos, Vec3 halfLengths, int collisionFlag ) {
+  bh->addInvisibleWall( pos, halfLengths, collisionFlag );
 }
 
 MatrixTransform* ObjectFactory::addSphere( Vec3 pos, double radius, Vec4 diffuse, bool phys, bool render ) {
@@ -365,6 +371,7 @@ MatrixTransform* ObjectFactory::addOpenBox( Vec3 pos, Vec3 halfLengths, double i
     openBoxShape->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
     
     Geode * obg = new Geode;
+    obg->setNodeMask(~2);
     obg->addDrawable( openBoxShape );
     mt->addChild( obg );
     Matrixd obm;
@@ -389,11 +396,12 @@ MatrixTransform* ObjectFactory::addHollowBox( Vec3 pos, Vec3 halfLengths, bool p
   return mt;
 }
 
-MatrixTransform* ObjectFactory::addAntiGravityField( Vec3 pos, double halfLength, Vec3 grav, bool phys ) {
+MatrixTransform* ObjectFactory::addAntiGravityField( Vec3 pos, Vec3 halfLengths, Vec3 grav, bool phys ) {
   MatrixTransform* mt = new MatrixTransform;
   
   Geode * box = new Geode;
-  Box * boxprim = new Box( Vec3(0,0,0), halfLength*2, halfLength*2, halfLength*2);
+  Box * boxprim = new Box( Vec3(0,0,0), 1,1,1);
+  boxprim->setHalfLengths( halfLengths );
   ShapeDrawable * sd = new ShapeDrawable(boxprim);
   box->addDrawable(sd);
   Matrix boxm;
@@ -405,7 +413,7 @@ MatrixTransform* ObjectFactory::addAntiGravityField( Vec3 pos, double halfLength
   ss->setAttributeAndModes(pg, StateAttribute::ON | StateAttribute::OVERRIDE);
   box->setNodeMask(~2);
     
-  bh->addAntiGravityField( pos, halfLength, grav );
+  bh->addAntiGravityField( pos, halfLengths, grav );
   numObjects++;
   m_objects.push_back( mt );
   m_physid.push_back( -1 );
@@ -500,7 +508,7 @@ void ObjectFactory::stepSim( double elapsedTime ) {
     
     Matrixd m;
     for (int i = 0; i < numObjects; ++i) {
-      if (m_physid[i] > -1) {
+      if (m_physid[i] > -1 && m_physid[i] != grabbedId) {
         bh->getWorldTransform( m_physid[i], m );
         m_objects[i]->setMatrix( m );
       }
@@ -520,9 +528,9 @@ MatrixTransform* ObjectFactory::addBoxHand( Vec3 halfLengths, Vec4 color ) {
   ShapeDrawable * sd = new ShapeDrawable(boxprim);
   sd->setColor( color );
   box->addDrawable(sd);
-  mt->addChild( box );
+  //mt->addChild( box );
   
-  handId = bh->addBox( Vec3(0,0,0), halfLengths, false );
+  handId = bh->addBox( Vec3(0,0,0), halfLengths, Quat(0,0,0,1), false );
   
   numObjects++;
   m_objects.push_back( mt );
@@ -535,33 +543,32 @@ MatrixTransform* ObjectFactory::addCylinderHand( double radius, double height, V
   MatrixTransform* mt = new MatrixTransform;
   Geode * tcyl = new Geode;
   Cylinder * tcylprim = new Cylinder( Vec3(0,0,0), radius, height);
+  tcylprim->setRotation(Quat(3.14f / (float) 2, Vec3f(-1,0,0)));
   ShapeDrawable * cyld = new ShapeDrawable(tcylprim);
   tcyl->getOrCreateStateSet()->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
   cyld->setColor( color );
   tcyl->addDrawable(cyld);
+  tcyl->setNodeMask(~2);
   //mt->addChild(tcyl);
   
-  bh->addHand( Vec3(0,0,0), Vec3(radius, 0, height/2) );
+  //bh->addHand( Vec3(0,0,0), Vec3(radius, 0, height/2) );
   /*handId = bh->addCylinder( Vec3(0,0,0), Vec3(radius, 0, height/2), false );
   
   numObjects++;
   m_objects.push_back( mt );
   m_physid.push_back( handId );
-  
-  handMat = mt;*/
+  */
+  handMat = mt;
   return mt;
 }
 
-void ObjectFactory::updateHand( Matrixd & m ) {
+void ObjectFactory::updateHand( Matrixd & m, const Matrixd & cam ) {
   if (grabbedMatrix) {
+    m *= Matrixd::inverse(cam);
+    //m *= Matrixd::translate(grabbedRelativePosition);
     m.setTrans( m.getTrans() + m.getRotate() * grabbedRelativePosition );
-    //std::cout << "New pos: " << (m.getTrans() - grabbedCurrentPosition).length2() << "\n";
-    /*if ((m.getTrans() - grabbedCurrentPosition).length2() > 0.1) {
-      grabbedLastPosition = grabbedCurrentPosition;
-      grabbedCurrentPosition = m.getTrans();
-      //std::cout << "New pos: " << grabbedCurrentPosition << "\n";
-    }*/
-    bh->setWorldTransform( grabbedId, m );
+    //std::cout << m.getTrans() << std::endl;
+    grabbedMatrix->setMatrix( m );
   }
 }
 
@@ -570,10 +577,9 @@ void ObjectFactory::updateButtonState( int bs ) {
 }
 
 bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
-  Vec3 pointerEnd(0.f,1000000.f,0.f);
-  pointerEnd = stylus.preMult( pointerEnd );
-  //std::cout << stylus.getTrans() << "\n";
-  //std::cout << pointerEnd << "\n";
+  Matrixd rootmat = ((MatrixTransform*) root)->getMatrix();
+  Vec3d pointerEnd(0.f,1000000.f,0.f);
+  pointerEnd = pointerEnd * stylus;
   
   osgUtil::IntersectVisitor objFinder;
   objFinder.setTraversalMask(2);
@@ -587,6 +593,7 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
   
   osgUtil::Hit closest = hl.front();
   std::string className = closest.getDrawable()->className();
+  std::cout << closest.getDrawable()->className() << std::endl;
   //std::cout << "Drawable Class: " << className << "\n";
   if (className.compare("ShapeDrawable") == 0) {
     std::string shapeName =  ((ShapeDrawable*) closest.getDrawable())->getShape()->className();
@@ -603,13 +610,21 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
       }
       if (grabbedId == -1) { grabbedMatrix = (MatrixTransform*) 0; return false; }
       else {
-        grabbedRelativePosition = Vec3(0,(grabbedMatrix->getMatrix().getTrans() - stylus.getTrans() + ((MatrixTransform*) root)->getMatrix().getTrans()).length(),0);
+        Vec3 stylus2cam = closest.getWorldIntersectPoint() - stylus.getTrans();
+        grabbedRelativePosition = Vec3(0, (closest.getWorldIntersectPoint() - stylus.getTrans()).length(), 0);
+        
+        //std::cout << "camSpace Pos: " << grabbedMatrix->getMatrix().getTrans() << std::endl;
+        //std::cout << "camstylus: " << stylus2cam << std::endl;
+        std::cout << "worldSpace Pos: " << grabbedRelativePosition << std::endl;
+        
         grabbedShape = ((ShapeDrawable*) closest.getDrawable());
         grabbedColor = grabbedShape->getColor();
-        grabbedShape->setColor( Vec4(0,0,0,1) );
+        grabbedShape->setColor( Vec4(grabbedColor.r() + 0.3, grabbedColor.g() + 0.3, grabbedColor.b() + 0.3, 1) );
       }
       return true;
     }
+  } else if (className.compare("Geometry") == 0) {
+    std::cout << "Geometry: " << closest.getDrawable()->asGeometry()->className() << std::endl;
   }
   
   return false;
@@ -619,7 +634,10 @@ void ObjectFactory::releaseObject() {
   //std::cout << "Releasing...\n";
   if (grabbedId != -1) {
     bh->setLinearVelocity(grabbedId, Vec3(0,0,0));
+    bh->activate(grabbedId);
     grabbedShape->setColor(grabbedColor);
+    Matrixd m = grabbedMatrix->getMatrix();
+    bh->setWorldTransform( grabbedId, m );
   }
   grabbedMatrix = 0;
   grabbedShape = 0;

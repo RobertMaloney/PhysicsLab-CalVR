@@ -31,18 +31,19 @@ class ObjectFactory {
     ObjectFactory();
     virtual ~ObjectFactory();
     
-    MatrixTransform* addBox( Vec3, Vec3, Vec4, bool, bool );
+    MatrixTransform* addBox( Vec3, Vec3, Quat, Vec4, bool, bool );
     MatrixTransform* addSeesaw( Vec3, Vec3, Vec4, bool, bool );
     MatrixTransform* addSphere( Vec3, double, Vec4, bool, bool );
     MatrixTransform* addCylinder( Vec3, double, double, Vec4, bool, bool );
     MatrixTransform* addOpenBox( Vec3, Vec3, double, bool, bool );
     MatrixTransform* addHollowBox( Vec3, Vec3, bool, bool );
-    MatrixTransform* addAntiGravityField( Vec3, double, Vec3, bool );
+    MatrixTransform* addAntiGravityField( Vec3, Vec3, Vec3, bool );
+    void addInvisibleWall( Vec3, Vec3, int );
     MatrixTransform* addPlane( Vec3, double, Vec3, bool, bool );
     PositionAttitudeTransform* addLight( Vec3, Vec4, Vec4, Vec4, StateSet* );
     MatrixTransform* addBoxHand( Vec3, Vec4 );
     MatrixTransform* addCylinderHand( double, double, Vec4 );
-    void updateHand( Matrixd & );
+    void updateHand( Matrixd &, const Matrixd & );
     void updateButtonState( int );
     bool grabObject( Matrixd&, Node* );
     void releaseObject();

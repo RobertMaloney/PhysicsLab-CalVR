@@ -23,7 +23,14 @@
 
 // Local
 #include "ObjectFactory.h"
-#include "NavHandler.h"
+
+enum KEYS {
+  W = 119,
+  A = 97,
+  S = 115,
+  D = 100,
+  SPACE = 32
+};
 
 class PhysicsLab : public cvr::CVRPlugin, public cvr::MenuCallback
 {
@@ -41,7 +48,7 @@ class PhysicsLab : public cvr::CVRPlugin, public cvr::MenuCallback
     
   private:
     ObjectFactory * of;
-    NavHandler * nh;
+    //NavHandler * nh;
 };
 
 #endif

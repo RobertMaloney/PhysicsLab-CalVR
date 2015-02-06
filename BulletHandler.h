@@ -1,5 +1,6 @@
 #ifndef _BULLETHANDLER_H
 #define _BULLETHANDLER_H
+#define BIT(x) (1<<(x))
 
 #include <vector>
 #include <osg/Vec3>
@@ -9,21 +10,28 @@
 #include <btBulletCollisionCommon.h>
 #include "AntiGravityField.h"
 
+enum CollisionType {
+  COL_NORMAL = BIT(1),
+  COL_SPHERE = BIT(2),
+  COL_WALL = BIT(3)
+};
+
 class BulletHandler
 {
-  
   public:
     BulletHandler();
     virtual ~BulletHandler();
-    int addBox( osg::Vec3, osg::Vec3, bool );
+    int addBox( osg::Vec3, osg::Vec3, osg::Quat, bool );
     int addSeesaw( osg::Vec3, osg::Vec3, bool );
     int addSphere( osg::Vec3, double, bool );
     int addCylinder( osg::Vec3, osg::Vec3, bool );
     int addOpenBox( osg::Vec3, osg::Vec3, double, bool );
     int addHollowBox( osg::Vec3, osg::Vec3, bool );
-    void addAntiGravityField(osg::Vec3, double, osg::Vec3);
+    void addAntiGravityField(osg::Vec3, osg::Vec3, osg::Vec3);
+    void addInvisibleWall(osg::Vec3, osg::Vec3, int);
     void setLinearVelocity( int, osg::Vec3 );
     osg::Vec3 getLinearVelocity( int );
+    void activate( int );
     void translate( int, osg::Vec3 );
     void setGravity( osg::Vec3 );
     
@@ -43,7 +51,7 @@ class BulletHandler
     btSequentialImpulseConstraintSolver* btsolver;
     btDiscreteDynamicsWorld* dynamicsWorld;
     
-    btRigidBody* addRigid( btCollisionShape*, btDefaultMotionState*, bool );
+    btRigidBody* addRigid( btCollisionShape*, btDefaultMotionState*, CollisionType, CollisionType, bool );
     std::vector<btRigidBody*> rbodies;
     int numRigidBodies;
     
