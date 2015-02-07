@@ -62,7 +62,7 @@ class ObjectFactory {
     MatrixTransform* grabbedMatrix;
     ShapeDrawable* grabbedShape;
     Vec4 grabbedColor;
-    Vec3 grabbedRelativePosition;
+    Vec3 grabbedRelativePosition, grabbedOffset;
     Vec3 grabbedCurrentPosition, grabbedLastPosition;
     int grabbedId;
     

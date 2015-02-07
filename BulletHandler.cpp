@@ -210,16 +210,10 @@ void BulletHandler::setWorldTransform( int id, osg::Matrixd & boxm ) {
     if (ms) {
         osg::Vec3 t = boxm.getTrans();
         btVector3 btv( t.x(), t.y(), t.z() );
-    
-        btQuaternion bt90;
-        bt90.setRotation( btVector3(1,0,0), 3.14159 / 2 );
-        
         osg::Quat q = boxm.getRotate();
         btQuaternion btq( q.x(), q.y(), q.z(), q.w() );
-        btq *= bt90;
+        btTransform btt( btq, btv);
         
-        btTransform btt( btQuaternion(0,0,0,1), btv);
-        //std::cout << *(osg::Vec3*) &btt.getOrigin() << "\n";
         rbodies[id]->setCenterOfMassTransform(btt);
         ms->setWorldTransform(btt);
         rbodies[id]->setGravity(btVector3(0,0,0));

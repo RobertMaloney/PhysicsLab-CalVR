@@ -87,12 +87,10 @@ void setupScene( ObjectFactory * of ) {
     // open box (pit)
     camNode->addChild( of->addOpenBox( Vec3(0,0,101), Vec3(2000,2000,100), 50.0, false, true ) );
     
-    // World Gravity
+    // World Gravity, Elevator, then Funnel
     of->addAntiGravityField( Vec3(0,0,0), Vec3(10000,10000,10000), Vec3(0,0,-5000), true );
-    // elevator
-    camNode->addChild( of->addAntiGravityField( Vec3(-1850,0,500), Vec3(100,100,400), Vec3(0,0,500), true ) );
-    // funnel
-    camNode->addChild( of->addAntiGravityField( Vec3(100,0,150), Vec3(1850,100,50), Vec3(-200,0,-5000), true) );
+    camNode->addChild( of->addAntiGravityField( Vec3(-1850,0,500), Vec3(100,100,450), Vec3(0,0,500), true ) );
+    camNode->addChild( of->addAntiGravityField( Vec3(100,0,100), Vec3(1850,100,50), Vec3(-5000,0,-5000), true) );
     
     // seesaw
     //camNode->addChild( of->addSeesaw( Vec3(500,0,350), Vec3(75,250,5), Vec4(0.0,1.0,0.0,1.0), true, true ) );

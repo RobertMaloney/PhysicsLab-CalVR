@@ -21,7 +21,6 @@ MatrixTransform* ObjectFactory::addBox( Vec3 pos, Vec3 halfLengths, Quat quat, V
   
   if ( render ) {
     Geode * box = new Geode;
-    box->setNodeMask(~2);
     Box * boxprim = new Box( Vec3(0,0,0), 1);
     boxprim->setHalfLengths( halfLengths );
     ShapeDrawable * sd = new ShapeDrawable(boxprim);
@@ -325,9 +324,12 @@ void ObjectFactory::updateHand( Matrixd & m, const Matrixd & cam ) {
   if (grabbedMatrix) {
     m *= Matrixd::inverse(cam);
     //m *= Matrixd::translate(grabbedRelativePosition);
-    m.setTrans( m.getTrans() + m.getRotate() * grabbedRelativePosition );
+    //m.setTrans( m.getTrans() + m.getRotate() * grabbedRelativePosition );
     //std::cout << m.getTrans() << std::endl;
-    grabbedMatrix->setMatrix( m );
+    Matrixd gm = grabbedMatrix->getMatrix();
+    gm.setTrans( m.getTrans() + m.getRotate() * grabbedRelativePosition - grabbedOffset);
+    grabbedMatrix->setMatrix( gm );
+    
   }
 }
 
@@ -336,7 +338,6 @@ void ObjectFactory::updateButtonState( int bs ) {
 }
 
 bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
-  Matrixd rootmat = ((MatrixTransform*) root)->getMatrix();
   Vec3d pointerEnd(0.f,1000000.f,0.f);
   pointerEnd = pointerEnd * stylus;
   
@@ -356,7 +357,7 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
   //std::cout << "Drawable Class: " << className << "\n";
   if (className.compare("ShapeDrawable") == 0) {
     std::string shapeName =  ((ShapeDrawable*) closest.getDrawable())->getShape()->className();
-    if (shapeName.compare("Sphere") == 0) {
+    if (shapeName.compare("Box") == 0 || shapeName.compare("Sphere") == 0) {
       NodePath np = closest.getNodePath();
       grabbedMatrix = (MatrixTransform*) np[np.size()-2];
       for (int i = 0; i < numObjects; ++i) {
@@ -372,10 +373,14 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
         Vec3 stylus2cam = closest.getWorldIntersectPoint() - stylus.getTrans();
         grabbedRelativePosition = Vec3(0, (closest.getWorldIntersectPoint() - stylus.getTrans()).length(), 0);
         
-        //std::cout << "camSpace Pos: " << grabbedMatrix->getMatrix().getTrans() << std::endl;
-        //std::cout << "camstylus: " << stylus2cam << std::endl;
-        std::cout << "worldSpace Pos: " << grabbedRelativePosition << std::endl;
+        // Put physics object away
+        Matrixd garbage = Matrixd::translate(2000.,2000.,0.);
+        bh->setWorldTransform(grabbedId, garbage);
         
+        //grabbedMatrix->asGroup()->addChild( addSphere(closest.getLocalIntersectPoint(), 10.f, Vec4(0,0,0,1), false, true) );
+        
+        grabbedOffset = grabbedMatrix->getMatrix().getRotate() * closest.getLocalIntersectPoint();
+        std::cout << "Offset: " << grabbedOffset << std::endl;
         grabbedShape = ((ShapeDrawable*) closest.getDrawable());
         grabbedColor = grabbedShape->getColor();
         grabbedShape->setColor( Vec4(grabbedColor.r() + 0.3, grabbedColor.g() + 0.3, grabbedColor.b() + 0.3, 1) );
