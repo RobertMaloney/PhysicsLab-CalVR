@@ -144,6 +144,30 @@ MatrixTransform* ObjectFactory::addOpenBox( Vec3 pos, Vec3 halfLengths, double i
   return mt;
 }
 
+MatrixTransform* ObjectFactory::addCustomObject( std::string path, Vec3 pos, Quat rot ) {
+  MatrixTransform* mt = new MatrixTransform;
+  Node* model = osgDB::readNodeFile( path );
+  
+  if (model != NULL) {
+    std::cout << path << " loaded.\n";
+    Group* modelgroup = model->asGroup();
+    if (modelgroup != NULL) {
+      std::cout << "Object is group with " << modelgroup->getNumChildren() << " children.\n";
+      for (int i = 0; i < modelgroup->getNumChildren(); ++i)
+          std::cout << "Child " << i << ": " << modelgroup->getChild(i)->asGeode()->getDrawable(0)->asGeometry()->getVertexArray()->getNumElements() << " drawables" << std::endl;
+    }
+  } else {
+    std::cout << path << " could not be loaded.\n";
+  }
+  
+  Matrixd m;
+  m.setTrans(pos);
+  m.setRotate(rot);
+  mt->setMatrix(m);
+  mt->addChild(model);
+  return mt;
+}
+
 MatrixTransform* ObjectFactory::addHollowBox( Vec3 pos, Vec3 halfLengths, bool phys, bool render ) {
   MatrixTransform* mt = new MatrixTransform;
   

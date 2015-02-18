@@ -4,12 +4,12 @@
 
 #include <vector>
 #include <osg/Vec3>
+#include <osg/Geometry>
 #include <osg/Matrixd>
 #include <osg/io_utils>
 #include <btBulletDynamicsCommon.h>
 #include <btBulletCollisionCommon.h>
 #include "AntiGravityField.h"
-#include <BulletCollision/CollisionDispatch/btGhostObject.h>
 
 enum CollisionType {
   COL_NORMAL = BIT(1),
@@ -22,14 +22,17 @@ class BulletHandler
   public:
     BulletHandler();
     virtual ~BulletHandler();
+    
     int addBox( osg::Vec3, osg::Vec3, osg::Quat, bool );
     int addSeesaw( osg::Vec3, osg::Vec3, bool );
     int addSphere( osg::Vec3, double, bool );
     int addCylinder( osg::Vec3, osg::Vec3, bool );
     int addOpenBox( osg::Vec3, osg::Vec3, double, bool );
     int addHollowBox( osg::Vec3, osg::Vec3, bool );
+    int addCustomObject( osg::Vec3Array, osg::Vec3Array, osg::Vec3Array, osg::Vec3, bool );
     void addAntiGravityField(osg::Vec3, osg::Vec3, osg::Vec3);
     void addInvisibleWall(osg::Vec3, osg::Vec3, int);
+    
     void setLinearVelocity( int, osg::Vec3 );
     osg::Vec3 getLinearVelocity( int );
     void activate( int );

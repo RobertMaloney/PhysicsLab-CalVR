@@ -2,6 +2,7 @@
 #define _OBJECTFACTORY_H
 
 #include <vector>
+#include <string>
 
 // OSG:
 #include <osg/Node>
@@ -20,6 +21,8 @@
 #include <osgUtil/IntersectVisitor>
 #include <osg/LineSegment>
 #include <osg/PolygonMode>
+#include <osgDB/ReadFile>
+#include <osgDB/FileUtils>
 
 // Local
 #include "BulletHandler.h"
@@ -43,6 +46,7 @@ class ObjectFactory {
     PositionAttitudeTransform* addLight( Vec3, Vec4, Vec4, Vec4, StateSet* );
     MatrixTransform* addBoxHand( Vec3, Vec4 );
     MatrixTransform* addCylinderHand( double, double, Vec4 );
+    MatrixTransform* addCustomObject( std::string, Vec3, Quat );
     
     // Game winning
     void addGoalZone( Vec3, Vec3 );

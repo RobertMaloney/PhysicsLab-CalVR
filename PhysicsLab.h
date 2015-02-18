@@ -48,7 +48,6 @@ class PhysicsLab : public cvr::CVRPlugin, public cvr::MenuCallback
     
   private:
     ObjectFactory * of;
-    //NavHandler * nh;
 };
 
 #endif

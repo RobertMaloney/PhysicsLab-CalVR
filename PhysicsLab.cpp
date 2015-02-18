@@ -115,6 +115,9 @@ void setupScene( ObjectFactory * of ) {
     camNode->addChild( of->addOpenBox( Vec3(1850, 0, 100), Vec3(100, 100, 50), 10.0f, false, true) );
     of->addGoalZone( Vec3(1850, 0, 100), Vec3(80, 80, 40) );
     
+    // custom object
+    camNode->addChild( of->addCustomObject( "./objects/kinect_mm.obj", Vec3(0,0,100), Quat(pi / (float) 2, Vec3(-1,0,0)) ));
+    
     // Light 0
     lightSS = PluginHelper::getScene()->getOrCreateStateSet();
     camNode->addChild( of->addLight( Vec3(500,500,500), Vec4(0.8,0.2,0.2,1.0), Vec4(0.2,0.2,0.2,1.0), Vec4(0,0,0,1.0), lightSS ) );
