@@ -11,7 +11,7 @@ btVector3 distToStylus;
 
 CollisionType normalCollides = (CollisionType) (COL_NORMAL | COL_SPHERE);
 
-void ghostCallback (btDynamicsWorld *world, btScalar timeStep)
+void tickCallback(btDynamicsWorld *world, btScalar timeStep)
 {
     // AVF
     for (int i = 0; i < clnumavfs; ++i) {
@@ -38,7 +38,7 @@ BulletHandler::BulletHandler() {
     btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, groundMotionState, groundShape, btVector3(0, 0, 0));
     btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
     dynamicsWorld->addRigidBody(groundRigidBody);
-    dynamicsWorld->setInternalTickCallback(ghostCallback,this,true);
+    dynamicsWorld->setInternalTickCallback(tickCallback,this,true);
     dynamicsWorld->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
     
     numRigidBodies = 0;

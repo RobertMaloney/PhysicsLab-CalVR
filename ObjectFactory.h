@@ -43,10 +43,17 @@ class ObjectFactory {
     PositionAttitudeTransform* addLight( Vec3, Vec4, Vec4, Vec4, StateSet* );
     MatrixTransform* addBoxHand( Vec3, Vec4 );
     MatrixTransform* addCylinderHand( double, double, Vec4 );
+    
+    // Game winning
+    void addGoalZone( Vec3, Vec3 );
+    bool wonGame();
+    
     void updateHand( Matrixd &, const Matrixd & );
     void updateButtonState( int );
     bool grabObject( Matrixd&, Node* );
     void releaseObject();
+    void pushGrabbedObject();
+    void pullGrabbedObject();
     
     void stepSim( double );
     BulletHandler* getBulletHandler();
@@ -67,5 +74,9 @@ class ObjectFactory {
     int grabbedId;
     
     int numLights;
+    
+    // goal data
+    BoundingBoxd* goalBounds;
+    bool m_wonGame;
 };
 #endif

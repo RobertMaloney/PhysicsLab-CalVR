@@ -264,13 +264,18 @@ PositionAttitudeTransform* ObjectFactory::addLight( Vec3 pos, Vec4 diffuse, Vec4
 void ObjectFactory::stepSim( double elapsedTime ) {
     bh->stepSim( elapsedTime );
     
+    int goalCount = 0;
     Matrixd m;
     for (int i = 0; i < numObjects; ++i) {
       if (m_physid[i] > -1 && m_physid[i] != grabbedId) {
         bh->getWorldTransform( m_physid[i], m );
         m_objects[i]->setMatrix( m );
+        if (goalBounds != NULL && goalBounds->contains(m.getTrans())) {
+          goalCount++;
+        }
       }
     }
+    if (goalCount > 1) m_wonGame = true;
 }
 
 BulletHandler* ObjectFactory::getBulletHandler() {
@@ -407,5 +412,22 @@ void ObjectFactory::releaseObject() {
   grabbedShape = 0;
   //std::cout << "Throwing at Tangent: " << grabbedCurrentPosition-grabbedLastPosition << "\n";
   grabbedId = -1;
+}
+
+void ObjectFactory::addGoalZone( Vec3 pos, Vec3 halfLengths ) {
+  goalBounds = new BoundingBoxd();
+  goalBounds->set(pos - halfLengths, pos + halfLengths);
+}
+
+bool ObjectFactory::wonGame() {
+  return m_wonGame;
+}
+
+void ObjectFactory::pushGrabbedObject() {
+  grabbedRelativePosition.y() += 50.0f;
+}
+
+void ObjectFactory::pullGrabbedObject() {
+  grabbedRelativePosition.y() -= 50.0f;
 }
 

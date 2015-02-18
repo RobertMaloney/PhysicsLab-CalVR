@@ -111,6 +111,10 @@ void setupScene( ObjectFactory * of ) {
     camNode->addChild( of->addBox( Vec3(-1850, 0, 800), Vec3(100,100,5), Quat(pi / (float) 6, Vec3(0,-1,0)), Vec4(0.6,0.25,0.1,1.0), false, true ) );
     camNode->addChild( of->addBox( Vec3(-250, 0, 300), Vec3(1500,100,5), Quat(pi / (float) 36, Vec3(0,1,0)), Vec4(0.6,0.25,0.1,1.0), false, true ) );
     
+    // goal bucket
+    camNode->addChild( of->addOpenBox( Vec3(1850, 0, 100), Vec3(100, 100, 50), 10.0f, false, true) );
+    of->addGoalZone( Vec3(1850, 0, 100), Vec3(80, 80, 40) );
+    
     // Light 0
     lightSS = PluginHelper::getScene()->getOrCreateStateSet();
     camNode->addChild( of->addLight( Vec3(500,500,500), Vec4(0.8,0.2,0.2,1.0), Vec4(0.2,0.2,0.2,1.0), Vec4(0,0,0,1.0), lightSS ) );
@@ -177,6 +181,12 @@ void PhysicsLab::preFrame()
     if (frame % 1500 == 0) {
       std::cout << "FPS: " << 1.0/PluginHelper::getLastFrameDuration() << std::endl;
     }
+    
+    static bool wonGame = false;
+    if (of->wonGame() ^ wonGame) {
+      std::cout << "WON.\n";
+      wonGame = of->wonGame();
+    }
       
     if (startSim) of->stepSim( PluginHelper::getLastFrameDuration() );
 }
@@ -196,10 +206,12 @@ bool PhysicsLab::processEvent(InteractionEvent * event) {
                   goRight = true;
                   break;
               case W:
-                  goUp = true;
+                  if (!grabbing) goUp = true;
+                  else of->pushGrabbedObject();
                   break;
               case S:
-                  goDown = true;
+                  if (!grabbing) goDown = true;
+                  else of->pullGrabbedObject();
                   break;
               case SPACE:
                   break;

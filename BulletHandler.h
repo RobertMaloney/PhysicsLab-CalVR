@@ -9,6 +9,7 @@
 #include <btBulletDynamicsCommon.h>
 #include <btBulletCollisionCommon.h>
 #include "AntiGravityField.h"
+#include <BulletCollision/CollisionDispatch/btGhostObject.h>
 
 enum CollisionType {
   COL_NORMAL = BIT(1),
@@ -57,6 +58,5 @@ class BulletHandler
     
     std::vector<AntiGravityField*> avfs;
     int numavfs;
-    
 };
 #endif
