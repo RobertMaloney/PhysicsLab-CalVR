@@ -125,20 +125,20 @@ int BulletHandler::addHollowBox( osg::Vec3 origin, osg::Vec3 halfLengths, bool p
     return numRigidBodies++;
 }
 
-int BulletHandler::addCustomObject( osg::Vec3Array vert0, osg::Vec3Array vert1, osg::Vec3Array vert2, osg::Vec3 pos, bool physEnabled ) {
-    if (vert0.getNumElements() != vert1.getNumElements() ||
-        vert0.getNumElements() != vert2.getNumElements())
-      return -1;
-        
+int BulletHandler::addCustomObject( std::vector<Triangle>* tris, double scale, osg::Vec3 pos, osg::Quat rot, bool physEnabled ) {
     btTriangleMesh* tri_mesh = new btTriangleMesh();
     
     // add all the triangles to the mesh
-    for (int i = 0; i < vert0.getNumElements(); ++i)
-      tri_mesh->addTriangle( *(btVector3*)&(vert0[i]), *(btVector3*)&(vert1[i]), *(btVector3*)&(vert2[i]), true );
-      
-    btBvhTriangleMeshShape* triShape = new btBvhTriangleMeshShape( tri_mesh, false );
+    for (int i = 0; i < tris->size(); ++i) {
+      //std::cout << tris->at(i).v1 << ", " << tris->at(i).v2 << ", " << tris->at(i).v3 << "\n";
+      tri_mesh->addTriangle( *(btVector3*)&(tris->at(i).v1), *(btVector3*)&(tris->at(i).v2), *(btVector3*)&(tris->at(i).v3), true );
+    }
+    
+    btConvexTriangleMeshShape* triShape = new btConvexTriangleMeshShape( tri_mesh );
+    //triShape->setLocalScaling( btVector3(scale,scale,scale) );
+    btQuaternion btq(rot.x(), rot.y(), rot.z(), rot.w());
     btDefaultMotionState* triMotionState =
-        new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&pos));
+        new btDefaultMotionState(btTransform(btq, *(btVector3*)&pos));
         
     btRigidBody * boxRigidBody = addRigid( triShape, triMotionState, COL_NORMAL, normalCollides, physEnabled );
     
@@ -236,7 +236,7 @@ void BulletHandler::setWorldTransform( int id, osg::Matrixd & boxm ) {
         
         rbodies[id]->setCenterOfMassTransform(btt);
         ms->setWorldTransform(btt);
-        rbodies[id]->setGravity(btVector3(0,0,0));
+        //rbodies[id]->setGravity(btVector3(0,0,0));
         dynamicsWorld->synchronizeSingleMotionState( rbodies[id] );
     }
 }

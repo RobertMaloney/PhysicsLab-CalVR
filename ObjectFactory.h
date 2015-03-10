@@ -21,11 +21,13 @@
 #include <osgUtil/IntersectVisitor>
 #include <osg/LineSegment>
 #include <osg/PolygonMode>
+#include <osg/TriangleFunctor>
 #include <osgDB/ReadFile>
 #include <osgDB/FileUtils>
 
 // Local
 #include "BulletHandler.h"
+#include "TriangleVisitor.h"
 
 using namespace osg;
 
@@ -34,7 +36,7 @@ class ObjectFactory {
     ObjectFactory();
     virtual ~ObjectFactory();
     
-    MatrixTransform* addBox( Vec3, Vec3, Quat, Vec4, bool, bool );
+    MatrixTransform* addBox( Vec3, Vec3, Quat, Vec4, bool, bool, bool );
     MatrixTransform* addSeesaw( Vec3, Vec3, Vec4, bool, bool );
     MatrixTransform* addSphere( Vec3, double, Vec4, bool, bool );
     MatrixTransform* addCylinder( Vec3, double, double, Vec4, bool, bool );
@@ -46,7 +48,7 @@ class ObjectFactory {
     PositionAttitudeTransform* addLight( Vec3, Vec4, Vec4, Vec4, StateSet* );
     MatrixTransform* addBoxHand( Vec3, Vec4 );
     MatrixTransform* addCylinderHand( double, double, Vec4 );
-    MatrixTransform* addCustomObject( std::string, Vec3, Quat );
+    MatrixTransform* addCustomObject( std::string, double, Vec3, Quat );
     
     // Game winning
     void addGoalZone( Vec3, Vec3 );
@@ -58,6 +60,7 @@ class ObjectFactory {
     void releaseObject();
     void pushGrabbedObject();
     void pullGrabbedObject();
+    void rotateGrabbedObject(float);
     
     void stepSim( double );
     BulletHandler* getBulletHandler();
@@ -71,10 +74,11 @@ class ObjectFactory {
     int handId;
     MatrixTransform* handMat;
     MatrixTransform* grabbedMatrix;
-    ShapeDrawable* grabbedShape;
+    Drawable* grabbedShape;
     Vec4 grabbedColor;
     Vec3 grabbedRelativePosition, grabbedOffset;
     Vec3 grabbedCurrentPosition, grabbedLastPosition;
+    bool grabbedIsSD;
     int grabbedId;
     
     int numLights;

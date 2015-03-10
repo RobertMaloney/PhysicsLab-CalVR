@@ -5,6 +5,7 @@ SET(PLUGIN_HEADERS
     AntiGravityField.h
     ObjectFactory.h
     NavHandler.h
+    TriangleVisitor.h
 )
 
 ADD_LIBRARY(${LIB_NAME}
@@ -14,6 +15,7 @@ ADD_LIBRARY(${LIB_NAME}
     BulletHandler.cpp
     ObjectFactory.cpp
     NavHandler.cpp
+    TriangleVisitor.cpp
 )
 
 FIND_PACKAGE(Bullet)

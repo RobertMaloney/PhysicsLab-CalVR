@@ -10,6 +10,8 @@
 #include <btBulletDynamicsCommon.h>
 #include <btBulletCollisionCommon.h>
 #include "AntiGravityField.h"
+#include "TriangleVisitor.h"
+#include <BulletCollision/Gimpact/btGImpactShape.h>
 
 enum CollisionType {
   COL_NORMAL = BIT(1),
@@ -29,7 +31,7 @@ class BulletHandler
     int addCylinder( osg::Vec3, osg::Vec3, bool );
     int addOpenBox( osg::Vec3, osg::Vec3, double, bool );
     int addHollowBox( osg::Vec3, osg::Vec3, bool );
-    int addCustomObject( osg::Vec3Array, osg::Vec3Array, osg::Vec3Array, osg::Vec3, bool );
+    int addCustomObject( std::vector<Triangle> *, double, osg::Vec3, osg::Quat, bool );
     void addAntiGravityField(osg::Vec3, osg::Vec3, osg::Vec3);
     void addInvisibleWall(osg::Vec3, osg::Vec3, int);
     

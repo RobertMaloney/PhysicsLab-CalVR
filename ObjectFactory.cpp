@@ -4,6 +4,8 @@
 #include <string>
 #include <cmath>
 
+int customId = -1;
+
 ObjectFactory::ObjectFactory() {
   bh = new BulletHandler();
   numObjects = 0;
@@ -16,7 +18,7 @@ ObjectFactory::~ObjectFactory() {
   delete bh;
 }
 
-MatrixTransform* ObjectFactory::addBox( Vec3 pos, Vec3 halfLengths, Quat quat, Vec4 diffuse, bool phys = true, bool render = true ) {
+MatrixTransform* ObjectFactory::addBox( Vec3 pos, Vec3 halfLengths, Quat quat, Vec4 diffuse, bool phys = true, bool render = true, bool grabable = true ) {
   MatrixTransform* mt = new MatrixTransform;
   
   if ( render ) {
@@ -31,6 +33,8 @@ MatrixTransform* ObjectFactory::addBox( Vec3 pos, Vec3 halfLengths, Quat quat, V
     boxm.setRotate(quat);
     mt->setMatrix( boxm );
     mt->addChild( box );
+    
+    if (!grabable) box->setNodeMask(~2);
   }
   
   numObjects++;
@@ -144,27 +148,31 @@ MatrixTransform* ObjectFactory::addOpenBox( Vec3 pos, Vec3 halfLengths, double i
   return mt;
 }
 
-MatrixTransform* ObjectFactory::addCustomObject( std::string path, Vec3 pos, Quat rot ) {
+MatrixTransform* ObjectFactory::addCustomObject( std::string path, double scale, Vec3 pos, Quat rot ) {
   MatrixTransform* mt = new MatrixTransform;
   Node* model = osgDB::readNodeFile( path );
+  Matrixd m;
+  m.setTrans(pos);
+  m.setRotate(rot);
   
   if (model != NULL) {
     std::cout << path << " loaded.\n";
-    Group* modelgroup = model->asGroup();
-    if (modelgroup != NULL) {
-      std::cout << "Object is group with " << modelgroup->getNumChildren() << " children.\n";
-      for (int i = 0; i < modelgroup->getNumChildren(); ++i)
-          std::cout << "Child " << i << ": " << modelgroup->getChild(i)->asGeode()->getDrawable(0)->asGeometry()->getVertexArray()->getNumElements() << " drawables" << std::endl;
-    }
+    TriangleVisitor tv;
+    model->accept(tv);
+    std::cout << "Num Triangles: " << tv.getTriangles()->size() << std::endl;
+    customId = bh->addCustomObject( tv.getTriangles(), scale, pos, rot, true );
+    
+    m_physid.push_back( customId );
+    m_objects.push_back( mt );
+    std::cout << "Mat to Find: " << mt << std::endl;
+    numObjects++;
   } else {
     std::cout << path << " could not be loaded.\n";
   }
   
-  Matrixd m;
-  m.setTrans(pos);
-  m.setRotate(rot);
   mt->setMatrix(m);
-  mt->addChild(model);
+  for (int i = 0; i < model->asGroup()->getNumChildren(); ++i)
+    mt->addChild(model->asGroup()->getChild(i));
   return mt;
 }
 
@@ -382,45 +390,38 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
   
   osgUtil::Hit closest = hl.front();
   std::string className = closest.getDrawable()->className();
-  std::cout << closest.getDrawable()->className() << std::endl;
-  //std::cout << "Drawable Class: " << className << "\n";
-  if (className.compare("ShapeDrawable") == 0) {
-    std::string shapeName =  ((ShapeDrawable*) closest.getDrawable())->getShape()->className();
-    if (shapeName.compare("Box") == 0 || shapeName.compare("Sphere") == 0) {
-      NodePath np = closest.getNodePath();
-      grabbedMatrix = (MatrixTransform*) np[np.size()-2];
-      for (int i = 0; i < numObjects; ++i) {
-        if (m_objects[i] == grabbedMatrix) {
-          std::cout << "Grabbing Geode.\n";
-          //grabbedMatrix = m_objects[i];
-          grabbedId = m_physid[i];
-          break;
-        }
-      }
-      if (grabbedId == -1) { grabbedMatrix = (MatrixTransform*) 0; return false; }
-      else {
-        Vec3 stylus2cam = closest.getWorldIntersectPoint() - stylus.getTrans();
-        grabbedRelativePosition = Vec3(0, (closest.getWorldIntersectPoint() - stylus.getTrans()).length(), 0);
-        
-        // Put physics object away
-        Matrixd garbage = Matrixd::translate(2000.,2000.,0.);
-        bh->setWorldTransform(grabbedId, garbage);
-        
-        //grabbedMatrix->asGroup()->addChild( addSphere(closest.getLocalIntersectPoint(), 10.f, Vec4(0,0,0,1), false, true) );
-        
-        grabbedOffset = grabbedMatrix->getMatrix().getRotate() * closest.getLocalIntersectPoint();
-        std::cout << "Offset: " << grabbedOffset << std::endl;
-        grabbedShape = ((ShapeDrawable*) closest.getDrawable());
-        grabbedColor = grabbedShape->getColor();
-        grabbedShape->setColor( Vec4(grabbedColor.r() + 0.3, grabbedColor.g() + 0.3, grabbedColor.b() + 0.3, 1) );
-      }
-      return true;
-    }
-  } else if (className.compare("Geometry") == 0) {
-    std::cout << "Geometry: " << closest.getDrawable()->asGeometry()->className() << std::endl;
-  }
+  std::cout << className << std::endl;
   
-  return false;
+  NodePath np = closest.getNodePath();
+  grabbedMatrix = (MatrixTransform*) np[np.size()-2];
+  for (int i = 0; i < numObjects; ++i) {
+    if (m_objects[i] == grabbedMatrix ) {
+      std::cout << "Grabbing Geode.\n";
+      grabbedId = m_physid[i];
+      break;
+    }
+  }
+  if (grabbedId == -1) {
+    grabbedMatrix = (MatrixTransform*) 0;
+    return false;
+  } else {
+    Vec3 stylus2cam = closest.getWorldIntersectPoint() - stylus.getTrans();
+    grabbedRelativePosition = Vec3(0, (closest.getWorldIntersectPoint() - stylus.getTrans()).length(), 0);
+    
+    // Put physics object away
+    Matrixd garbage = Matrixd::translate(2000.,2000.,0.);
+    bh->setWorldTransform(grabbedId, garbage);
+    
+    // Save grabbed object data
+    grabbedOffset = grabbedMatrix->getMatrix().getRotate() * closest.getLocalIntersectPoint();
+    grabbedShape = closest.getDrawable();
+    if (std::string(grabbedShape->className()).compare("ShapeDrawable") == 0) {
+      grabbedIsSD = true;
+      grabbedColor = ((ShapeDrawable*) grabbedShape)->getColor();
+      ((ShapeDrawable*) grabbedShape)->setColor( Vec4(grabbedColor.r() + 0.4, grabbedColor.g() + 0.4, grabbedColor.b() + 0.4, 1) );
+    } else grabbedIsSD = false;
+  }
+  return true;
 }
 
 void ObjectFactory::releaseObject() {
@@ -428,14 +429,14 @@ void ObjectFactory::releaseObject() {
   if (grabbedId != -1) {
     bh->setLinearVelocity(grabbedId, Vec3(0,0,0));
     bh->activate(grabbedId);
-    grabbedShape->setColor(grabbedColor);
+    if (grabbedIsSD) ((ShapeDrawable*) grabbedShape)->setColor(grabbedColor);
     Matrixd m = grabbedMatrix->getMatrix();
     bh->setWorldTransform( grabbedId, m );
   }
   grabbedMatrix = 0;
   grabbedShape = 0;
-  //std::cout << "Throwing at Tangent: " << grabbedCurrentPosition-grabbedLastPosition << "\n";
   grabbedId = -1;
+  grabbedIsSD = false;
 }
 
 void ObjectFactory::addGoalZone( Vec3 pos, Vec3 halfLengths ) {
@@ -453,5 +454,9 @@ void ObjectFactory::pushGrabbedObject() {
 
 void ObjectFactory::pullGrabbedObject() {
   grabbedRelativePosition.y() -= 50.0f;
+}
+
+void ObjectFactory::rotateGrabbedObject( float angle ) {
+  grabbedMatrix->setMatrix( grabbedMatrix->getMatrix() * Matrixd::rotate(angle / 180.0f * 3.141592653f, Vec3(0,1,0)) );
 }
 

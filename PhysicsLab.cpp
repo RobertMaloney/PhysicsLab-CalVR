@@ -96,7 +96,7 @@ void setupScene( ObjectFactory * of ) {
     //camNode->addChild( of->addSeesaw( Vec3(500,0,350), Vec3(75,250,5), Vec4(0.0,1.0,0.0,1.0), true, true ) );
     //camNode->addChild( of->addSeesaw( Vec3(-500,0,350), Vec3(75,250,5), Vec4(1.0,0.0,0.0,1.0), true, true ) );
     
-    camNode->addChild( of->addBox( Vec3(0,0,-5000), Vec3(5000,5000,5000), Quat(0,0,0,1), Vec4(1.0,1.0,1.0,1.0), false, true ) );
+    camNode->addChild( of->addBox( Vec3(0,0,-5000), Vec3(5000,5000,5000), Quat(0,0,0,1), Vec4(1.0,1.0,1.0,1.0), false, true, false ) );
     
     handBall = of->addCylinderHand( 1.0f, 1000000.0f, Vec4(1,1,1,1) );
     PluginHelper::getScene()->addChild( handBall );
@@ -108,15 +108,15 @@ void setupScene( ObjectFactory * of ) {
     of->addInvisibleWall( Vec3(-2000,0,2000), Vec3(10,100,2000), COL_SPHERE );
     
     // Start Ramp
-    camNode->addChild( of->addBox( Vec3(-1850, 0, 800), Vec3(100,100,5), Quat(pi / (float) 6, Vec3(0,-1,0)), Vec4(0.6,0.25,0.1,1.0), false, true ) );
-    camNode->addChild( of->addBox( Vec3(-250, 0, 300), Vec3(1500,100,5), Quat(pi / (float) 36, Vec3(0,1,0)), Vec4(0.6,0.25,0.1,1.0), false, true ) );
+    camNode->addChild( of->addBox( Vec3(-1850, 0, 800), Vec3(100,100,5), Quat(pi / (float) 6, Vec3(0,-1,0)), Vec4(0.6,0.25,0.1,1.0), false, true, true ) );
+    camNode->addChild( of->addBox( Vec3(-250, 0, 300), Vec3(1500,100,5), Quat(pi / (float) 36, Vec3(0,1,0)), Vec4(0.6,0.25,0.1,1.0), false, true, true ) );
     
     // goal bucket
     camNode->addChild( of->addOpenBox( Vec3(1850, 0, 100), Vec3(100, 100, 50), 10.0f, false, true) );
     of->addGoalZone( Vec3(1850, 0, 100), Vec3(80, 80, 40) );
     
     // custom object
-    camNode->addChild( of->addCustomObject( "./objects/kinect_mm.obj", Vec3(0,0,100), Quat(pi / (float) 2, Vec3(-1,0,0)) ));
+    camNode->addChild( of->addCustomObject( "./objects/kinect_mm.obj", 1, Vec3(0,0,100), Quat(90, Vec3(-1,0,0)) ));
     
     // Light 0
     lightSS = PluginHelper::getScene()->getOrCreateStateSet();
@@ -125,6 +125,26 @@ void setupScene( ObjectFactory * of ) {
     camNode->addChild( of->addLight( Vec3(-500,-500,500), Vec4(0.2,0.2,0.8,1.0), Vec4(0.2,0.2,0.2,1.0), Vec4(0,0,0,1.0), lightSS ) );
     camNode->addChild( of->addLight( Vec3(500,-500,500), Vec4(0.8,0.8,0.8,1.0), Vec4(0.2,0.2,0.2,1.0), Vec4(0,0,0,1.0), lightSS ) );
     
+    /* DEMO WORLD 
+    Vec4 colorArray[4];
+    colorArray[0] = Vec4(1.0,1.0,1.0,1.0);
+    colorArray[1] = Vec4(1.0,0.0,0.0,1.0);
+    colorArray[2] = Vec4(0.0,1.0,0.0,1.0);
+    colorArray[3] = Vec4(0.0,0.0,1.0,1.0);
+    
+    for (int i = 0; i < 5; ++i) {
+      camNode->addChild( of->addBox( Vec3(-1700+200*i,0,600-100*i), Vec3(100,100,100), Quat(0,0,0,1), colorArray[i%4], false, true ) );
+      camNode->addChild( of->addBox( Vec3(-1700+200*i,0,1100-100*i), Vec3(100,100,100), Quat(0,0,0,1), colorArray[(i+2)%4], false, true ) );
+      
+      camNode->addChild( of->addBox( Vec3(-900+200*i,0,200), Vec3(100,100,100), Quat(0,0,0,1), colorArray[i%4], false, true ) );
+      camNode->addChild( of->addBox( Vec3(-900+200*i,0,700), Vec3(100,100,100), Quat(0,0,0,1), colorArray[(i+2)%4], false, true ) );
+      
+      camNode->addChild( of->addBox( Vec3(-100+200*i,0,200+100*i), Vec3(100,100,100), Quat(0,0,0,1), colorArray[i%4], false, true ) );
+      camNode->addChild( of->addBox( Vec3(-100+200*i,0,700+100*i), Vec3(100,100,100), Quat(0,0,0,1), colorArray[(i+2)%4], false, true ) );
+    }
+    
+    camNode->addChild( of->addSeesaw( Vec3(1250,0,650), Vec3(350,75,5), Vec4(0.0,1.0,0.0,1.0), true, true ) );
+     END DEMO WORLD */
 }
 
 // this is called if the plugin is removed at runtime
@@ -203,10 +223,12 @@ bool PhysicsLab::processEvent(InteractionEvent * event) {
         if (kp->getInteraction() == KEY_DOWN) {
           switch (kp->getKey()) {
               case A:
-                  goLeft = true;
+                  if (!grabbing) goLeft = true;
+                  else of->rotateGrabbedObject(-1.0f);
                   break;
               case D:
-                  goRight = true;
+                  if (!grabbing) goRight = true;
+                  else of->rotateGrabbedObject(1.0f);
                   break;
               case W:
                   if (!grabbing) goUp = true;
