@@ -117,7 +117,10 @@ void setupScene( ObjectFactory * of ) {
     of->addGoalZone( Vec3(1850, 0, 100), Vec3(80, 80, 40) );
     
     // custom object
-    camNode->addChild( of->addCustomObject( "./objects/kinect_mm.obj", 1, Vec3(0,0,100), Quat(90, Vec3(-1,0,0)) ));
+    camNode->addChild( of->addCustomObject( "./objects/bigramp.dae", 3.0f, Vec3(0,0,100), Quat(0, Vec3(0,1,0)), false ));
+    camNode->addChild( of->addCustomObject( "./objects/rampOnSteps.dae", 7.0f, Vec3(0,0,100), Quat(0, Vec3(0,1,0)), false ));
+    camNode->addChild( of->addCustomObject( "./objects/boat.dae", 4.0f, Vec3(0,0,100), Quat(0, Vec3(0,1,0)), false ));
+    camNode->addChild( of->addCustomObject( "./objects/stairs.dae", 7.0f, Vec3(0,0,100), Quat(0, Vec3(0,1,0)), false ));
     
     // Light 0
     lightSS = PluginHelper::getScene()->getOrCreateStateSet();
@@ -225,11 +228,11 @@ bool PhysicsLab::processEvent(InteractionEvent * event) {
           switch (kp->getKey()) {
               case A:
                   if (!grabbing) goLeft = true;
-                  else of->rotateGrabbedObject(-1.0f);
+                  else of->rotateGrabbedObject(-3.0f, Vec3(0,1,0));
                   break;
               case D:
                   if (!grabbing) goRight = true;
-                  else of->rotateGrabbedObject(1.0f);
+                  else of->rotateGrabbedObject(3.0f, Vec3(0,1,0));
                   break;
               case W:
                   if (!grabbing) goUp = true;
@@ -240,6 +243,7 @@ bool PhysicsLab::processEvent(InteractionEvent * event) {
                   else of->pullGrabbedObject();
                   break;
               case SPACE:
+                  if (grabbing) of->rotateGrabbedObject(3.0f, Vec3(0,0,1));
                   break;
           }
         } else if (kp->getInteraction() == KEY_UP) {

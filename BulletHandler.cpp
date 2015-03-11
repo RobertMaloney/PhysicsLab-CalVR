@@ -134,8 +134,12 @@ int BulletHandler::addCustomObject( std::vector<Triangle>* tris, double scale, o
       tri_mesh->addTriangle( *(btVector3*)&(tris->at(i).v1), *(btVector3*)&(tris->at(i).v2), *(btVector3*)&(tris->at(i).v3), true );
     }
     
-    btConvexTriangleMeshShape* triShape = new btConvexTriangleMeshShape( tri_mesh );
-    //triShape->setLocalScaling( btVector3(scale,scale,scale) );
+    btCollisionShape* triShape;
+    if (physEnabled) {
+      triShape = new btConvexTriangleMeshShape( tri_mesh );
+    } else {
+      triShape = new btScaledBvhTriangleMeshShape( new btBvhTriangleMeshShape(tri_mesh, true), btVector3(scale,scale,scale) );
+    }
     btQuaternion btq(rot.x(), rot.y(), rot.z(), rot.w());
     btDefaultMotionState* triMotionState =
         new btDefaultMotionState(btTransform(btq, *(btVector3*)&pos));
@@ -150,7 +154,7 @@ int BulletHandler::addSphere( osg::Vec3 origin, double width, bool physEnabled )
     btDefaultMotionState* sphereMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
         
-    btRigidBody * sphereRigidBody = addRigid( sphereShape, sphereMotionState, COL_SPHERE, (CollisionType) (normalCollides | COL_WALL), physEnabled );
+    addRigid( sphereShape, sphereMotionState, COL_SPHERE, (CollisionType) (normalCollides | COL_WALL), physEnabled );
     
     return numRigidBodies++;
 }
@@ -160,7 +164,7 @@ int BulletHandler::addCylinder( osg::Vec3 origin, osg::Vec3 halfLengths, bool ph
     btDefaultMotionState* cylMotionState =
         new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), *(btVector3*)&origin));
         
-    btRigidBody * cylRigidBody = addRigid( cylShape, cylMotionState, COL_NORMAL, normalCollides, physEnabled );
+    addRigid( cylShape, cylMotionState, COL_NORMAL, normalCollides, physEnabled );
     
     return numRigidBodies++;
 }

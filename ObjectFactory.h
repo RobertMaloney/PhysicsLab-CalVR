@@ -48,7 +48,7 @@ class ObjectFactory {
     PositionAttitudeTransform* addLight( Vec3, Vec4, Vec4, Vec4, StateSet* );
     MatrixTransform* addBoxHand( Vec3, Vec4 );
     MatrixTransform* addCylinderHand( double, double, Vec4 );
-    MatrixTransform* addCustomObject( std::string, double, Vec3, Quat );
+    MatrixTransform* addCustomObject( std::string, double, Vec3, Quat, bool );
     
     // Game winning
     void addGoalZone( Vec3, Vec3 );
@@ -60,7 +60,7 @@ class ObjectFactory {
     void releaseObject();
     void pushGrabbedObject();
     void pullGrabbedObject();
-    void rotateGrabbedObject(float);
+    void rotateGrabbedObject(float, Vec3);
     
     void stepSim( double );
     BulletHandler* getBulletHandler();
@@ -71,6 +71,7 @@ class ObjectFactory {
     
     // vector of physics-connected objects
     std::vector<MatrixTransform*> m_objects;
+    std::vector<float> m_scales;
     
     // vector of objects that can solve the puzzle
     // currently all spheres
@@ -86,7 +87,7 @@ class ObjectFactory {
     Vec3 grabbedRelativePosition, grabbedOffset;
     Vec3 grabbedCurrentPosition, grabbedLastPosition;
     bool grabbedIsSD;
-    int grabbedId;
+    int grabbedPhysId, grabbedId;
     /* End Grabbed Object Data */
     
     int numLights;

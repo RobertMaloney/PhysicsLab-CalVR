@@ -2,6 +2,7 @@
 
 std::vector< Triangle > * TriangleVisitor::_triangles;
 osg::Matrixd TriangleVisitor::_matrix;
+osg::Vec3 TriangleVisitor::max_v, TriangleVisitor::min_v;
 
 TriangleVisitor::TriangleVisitor():
     osg::NodeVisitor(osg::NodeVisitor::TRAVERSE_ALL_CHILDREN)
