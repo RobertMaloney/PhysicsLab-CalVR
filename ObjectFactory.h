@@ -68,11 +68,18 @@ class ObjectFactory {
   private:
     BulletHandler* bh;
     int numObjects;
+    
+    // vector of physics-connected objects
     std::vector<MatrixTransform*> m_objects;
-    std::vector<ShapeDrawable*> m_shaped;
+    
+    // vector of objects that can solve the puzzle
+    // currently all spheres
+    std::vector<MatrixTransform*> m_solvers;
     std::vector<int> m_physid;
     int handId;
     MatrixTransform* handMat;
+    
+    /* Grabbed Object Data */
     MatrixTransform* grabbedMatrix;
     Drawable* grabbedShape;
     Vec4 grabbedColor;
@@ -80,6 +87,7 @@ class ObjectFactory {
     Vec3 grabbedCurrentPosition, grabbedLastPosition;
     bool grabbedIsSD;
     int grabbedId;
+    /* End Grabbed Object Data */
     
     int numLights;
     

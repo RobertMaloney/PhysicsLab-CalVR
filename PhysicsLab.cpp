@@ -106,6 +106,7 @@ void setupScene( ObjectFactory * of ) {
     of->addInvisibleWall( Vec3(0,105,2000), Vec3(2000,10,2000), COL_SPHERE );
     of->addInvisibleWall( Vec3(0,-105,2000), Vec3(2000,10,2000), COL_SPHERE );
     of->addInvisibleWall( Vec3(-2000,0,2000), Vec3(10,100,2000), COL_SPHERE );
+    //of->addInvisibleWall( Vec3(1850, 0, 150), Vec3(100,100,5), ~COL_SPHERE );
     
     // Start Ramp
     camNode->addChild( of->addBox( Vec3(-1850, 0, 800), Vec3(100,100,5), Quat(pi / (float) 6, Vec3(0,-1,0)), Vec4(0.6,0.25,0.1,1.0), false, true, true ) );

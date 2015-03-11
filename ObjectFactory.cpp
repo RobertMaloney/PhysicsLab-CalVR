@@ -90,6 +90,7 @@ MatrixTransform* ObjectFactory::addSphere( Vec3 pos, double radius, Vec4 diffuse
   
   numObjects++;
   m_objects.push_back( mt );
+  m_solvers.push_back( mt );
   m_physid.push_back( bh->addSphere( pos, radius, phys ) );
   
   return mt;
@@ -296,18 +297,22 @@ PositionAttitudeTransform* ObjectFactory::addLight( Vec3 pos, Vec4 diffuse, Vec4
 void ObjectFactory::stepSim( double elapsedTime ) {
     bh->stepSim( elapsedTime );
     
-    int goalCount = 0;
     Matrixd m;
     for (int i = 0; i < numObjects; ++i) {
       if (m_physid[i] > -1 && m_physid[i] != grabbedId) {
         bh->getWorldTransform( m_physid[i], m );
         m_objects[i]->setMatrix( m );
-        if (goalBounds != NULL && goalBounds->contains(m.getTrans())) {
-          goalCount++;
-        }
       }
     }
-    if (goalCount > 1) m_wonGame = true;
+    
+    // only check once
+    if (!m_wonGame) {
+      int goalCount = 0;
+      for (int i = 0; i < m_solvers.size(); ++i) {
+        if (goalBounds != NULL && goalBounds->contains(m_solvers[i]->getMatrix().getTrans())) goalCount++;
+      }
+      if (goalCount > 1) m_wonGame = true;
+    }
 }
 
 BulletHandler* ObjectFactory::getBulletHandler() {
