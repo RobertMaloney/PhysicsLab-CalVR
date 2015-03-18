@@ -160,6 +160,7 @@ MatrixTransform* ObjectFactory::addCustomObject( std::string path, double scale,
   Matrixd m;
   m.setTrans(pos);
   m.setRotate(rot);
+  mt->setMatrix(m);
   
   if (model != NULL) {
     std::cout << path << " loaded.\n";
@@ -171,11 +172,11 @@ MatrixTransform* ObjectFactory::addCustomObject( std::string path, double scale,
     
     m_physid.push_back( customId );
     m_objects.push_back( mt );
-    //MatrixTransform* centered = new MatrixTransform;
-    //centered->setMatrix( Matrixd::translate(-tv.getCenter()) );
-    //mt->addChild(centered);
-    //centered->addChild(model);
-    mt->addChild(model);
+    MatrixTransform* centered = new MatrixTransform;
+    centered->setMatrix( Matrixd::scale(scale,scale,scale) );
+    mt->addChild(centered);
+    centered->addChild(model);
+    //mt->addChild(model);
     m_scales.push_back(scale);
     numObjects++;
   } else {
@@ -311,7 +312,7 @@ void ObjectFactory::stepSim( double elapsedTime ) {
     for (int i = 0; i < numObjects; ++i) {
       if (m_physid[i] > -1 && m_physid[i] != grabbedPhysId) {
         bh->getWorldTransform( m_physid[i], m );
-        m.preMultScale(Vec3(m_scales[i], m_scales[i], m_scales[i]));
+        //m.preMultScale(Vec3(m_scales[i], m_scales[i], m_scales[i]));
         //m.setTrans(pos);
         m_objects[i]->setMatrix( m );
       }
@@ -377,14 +378,9 @@ MatrixTransform* ObjectFactory::addCylinderHand( double radius, double height, V
 
 void ObjectFactory::updateHand( Matrixd & m, const Matrixd & cam ) {
   if (grabbedMatrix) {
-    m *= Matrixd::inverse(cam);
-    //m *= Matrixd::translate(grabbedRelativePosition);
-    //m.setTrans( m.getTrans() + m.getRotate() * grabbedRelativePosition );
-    //std::cout << m.getTrans() << std::endl;
-    Matrixd gm = grabbedMatrix->getMatrix();
-    gm.setTrans( m.getTrans() + m.getRotate() * grabbedRelativePosition - grabbedOffset);
-    grabbedMatrix->setMatrix( gm );
-    
+    Matrixd mat = grabbedMatrixOffset * m;
+    mat = mat * Matrixd::inverse(cam);
+    grabbedMatrix->setMatrix( mat );
   }
 }
 
@@ -411,13 +407,13 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
   std::cout << className << std::endl;
   
   NodePath np = closest.getNodePath();
+  NodePath::reverse_iterator it;
   for (int i = 0; i < numObjects; ++i) {
-    for (NodePath::reverse_iterator it = np.rbegin(); it != np.rend(); ++it) {
+    for (it = np.rbegin(); it != np.rend(); ++it) {
       if (m_objects[i] == *it ) {
-        std::cout << "Grabbing Geode.\n";
         grabbedPhysId = m_physid[i];
         grabbedId = i;
-        grabbedMatrix = (MatrixTransform*) (*it)->asGroup();
+        grabbedMatrix = (MatrixTransform*) (*it)->asTransform();
         break;
       }
     }
@@ -428,39 +424,44 @@ bool ObjectFactory::grabObject( Matrixd & stylus, Node* root ) {
     grabbedMatrix = (MatrixTransform*) 0;
     return false;
   } else {
-    Vec3 stylus2cam = closest.getWorldIntersectPoint() - stylus.getTrans();
-    grabbedRelativePosition = Vec3(0, (closest.getWorldIntersectPoint() - stylus.getTrans()).length(), 0);
-    
     // Put physics object away
     Matrixd garbage = Matrixd::translate(2000.,2000.,0.);
     bh->setWorldTransform(grabbedPhysId, garbage);
     
-    // Save grabbed object data
-    Vec3 center(0,0,0);
-    //if (grabbedMatrix->getChild(0)->asGroup() != NULL) center = ((MatrixTransform*) grabbedMatrix->getChild(0))->getMatrix().getTrans();
-    grabbedOffset = grabbedMatrix->getMatrix().getRotate() * (closest.getLocalIntersectPoint() * m_scales[grabbedId]);
-    std::cout << closest.getLocalIntersectPoint() * m_scales[grabbedId] << std::endl;
+    // grab the shape if we alter its color
     grabbedShape = closest.getDrawable();
+    
+    // offset matrix
+    grabbedMatrixOffset = grabbedMatrix->getMatrix();
+    
+    // convert it to world space
+    ++it;
+    for (; it != np.rend(); ++it)
+      if ((*it)->asTransform() != NULL) {
+      std::cout << "Matrix Step: " << (*it)->asTransform()->asMatrixTransform()->getMatrix();
+        grabbedMatrixOffset *= (*it)->asTransform()->asMatrixTransform()->getMatrix();
+      }
+    // make a "delta" matrix (final - initial)
+    grabbedMatrixOffset = grabbedMatrixOffset * Matrixd::inverse(stylus);
+    
+    // highlight if a colored shapedrawable
     if (std::string(grabbedShape->className()).compare("ShapeDrawable") == 0) {
       grabbedIsSD = true;
       grabbedColor = ((ShapeDrawable*) grabbedShape)->getColor();
       ((ShapeDrawable*) grabbedShape)->setColor( Vec4(grabbedColor.r() + 0.4, grabbedColor.g() + 0.4, grabbedColor.b() + 0.4, 1) );
     } else {
       grabbedIsSD = false;
-      grabbedOffset = Vec3(0,0,0);
     }
   }
   return true;
 }
 
 void ObjectFactory::releaseObject() {
-  //std::cout << "Releasing...\n";
   if (grabbedPhysId != -1) {
     bh->setLinearVelocity(grabbedPhysId, Vec3(0,0,0));
     bh->activate(grabbedPhysId);
     if (grabbedIsSD) ((ShapeDrawable*) grabbedShape)->setColor(grabbedColor);
     Matrixd m = grabbedMatrix->getMatrix();
-    m.preMultScale(Vec3(1/m_scales[grabbedId], 1/m_scales[grabbedId], 1/m_scales[grabbedId]));
     bh->setWorldTransform( grabbedPhysId, m );
   }
   grabbedMatrix = 0;
@@ -476,17 +477,5 @@ void ObjectFactory::addGoalZone( Vec3 pos, Vec3 halfLengths ) {
 
 bool ObjectFactory::wonGame() {
   return m_wonGame;
-}
-
-void ObjectFactory::pushGrabbedObject() {
-  grabbedRelativePosition.y() += 50.0f;
-}
-
-void ObjectFactory::pullGrabbedObject() {
-  grabbedRelativePosition.y() -= 50.0f;
-}
-
-void ObjectFactory::rotateGrabbedObject( float angle, Vec3 axis ) {
-  grabbedMatrix->setMatrix( grabbedMatrix->getMatrix() * Matrixd::rotate(angle / 180.0f * 3.141592653f, axis) );
 }
 

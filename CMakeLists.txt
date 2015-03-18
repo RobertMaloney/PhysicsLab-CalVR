@@ -4,7 +4,6 @@ SET(PLUGIN_HEADERS
     BulletHandler.h
     AntiGravityField.h
     ObjectFactory.h
-    NavHandler.h
     TriangleVisitor.h
 )
 
@@ -14,7 +13,6 @@ ADD_LIBRARY(${LIB_NAME}
     PhysicsLab.cpp
     BulletHandler.cpp
     ObjectFactory.cpp
-    NavHandler.cpp
     TriangleVisitor.cpp
 )
 

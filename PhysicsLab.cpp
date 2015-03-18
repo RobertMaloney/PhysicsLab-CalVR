@@ -58,7 +58,6 @@ bool PhysicsLab::init()
   MenuSystem::instance()->addMenuItem(_mainMenu); 
   
   of = new ObjectFactory();
-  //nh = new NavHandler( of->getBulletHandler(), Vec3(0,0, 600) );
   setupScene( of );
   
   return true;
@@ -74,7 +73,7 @@ void setupScene( ObjectFactory * of ) {
 	  //camNode = PluginHelper::getScene();
 	  Matrix cam0, cam1, cam2;
 	  cam0.makeRotate(-30 * pi / 180, Vec3(1,0,0));
-	  cam2.makeTranslate(0,800,-1200);
+	  cam2.makeTranslate(0,3550,-3300);
 	  cam2 = cam0 * cam1 * cam2;
 	  camNode->setMatrix(cam2);
     PluginHelper::getScene()->addChild( camNode );
@@ -98,10 +97,6 @@ void setupScene( ObjectFactory * of ) {
     
     camNode->addChild( of->addBox( Vec3(0,0,-5000), Vec3(5000,5000,5000), Quat(0,0,0,1), Vec4(1.0,1.0,1.0,1.0), false, true, false ) );
     
-    handBall = of->addCylinderHand( 1.0f, 1000000.0f, Vec4(1,1,1,1) );
-    PluginHelper::getScene()->addChild( handBall );
-    handBall->setMatrix( PluginHelper::getHandMat(0) );
-    
     // Invisible Sphere Walls
     of->addInvisibleWall( Vec3(0,105,2000), Vec3(2000,10,2000), COL_SPHERE );
     of->addInvisibleWall( Vec3(0,-105,2000), Vec3(2000,10,2000), COL_SPHERE );
@@ -119,8 +114,8 @@ void setupScene( ObjectFactory * of ) {
     // custom object
     camNode->addChild( of->addCustomObject( "./objects/bigramp.dae", 3.0f, Vec3(0,0,100), Quat(0, Vec3(0,1,0)), false ));
     camNode->addChild( of->addCustomObject( "./objects/rampOnSteps.dae", 7.0f, Vec3(0,0,100), Quat(0, Vec3(0,1,0)), false ));
-    camNode->addChild( of->addCustomObject( "./objects/boat.dae", 4.0f, Vec3(0,0,100), Quat(0, Vec3(0,1,0)), false ));
-    camNode->addChild( of->addCustomObject( "./objects/stairs.dae", 7.0f, Vec3(0,0,100), Quat(0, Vec3(0,1,0)), false ));
+    //camNode->addChild( of->addCustomObject( "./objects/boat.dae", 4.0f, Vec3(0,0,100), Quat(0, Vec3(0,1,0)), false ));
+    camNode->addChild( of->addCustomObject( "./objects/cube.wrl", 2.0f, Vec3(0,0,100), Quat(), false ));
     
     // Light 0
     lightSS = PluginHelper::getScene()->getOrCreateStateSet();
@@ -155,7 +150,6 @@ void setupScene( ObjectFactory * of ) {
 PhysicsLab::~PhysicsLab()
 {
     delete of;
-    //delete nh;
 }
 
 void PhysicsLab::preFrame()
@@ -173,9 +167,9 @@ void PhysicsLab::preFrame()
       }
       
       if (goUp && !goDown) {
-        cam.setTrans( cam.getTrans() + cam.getRotate()*Vec3(0.f,-xdiff,0.f) );
+        cam.setTrans( cam.getTrans() + cam.getRotate()*Vec3(0.f,0.f,-xdiff) );
       } else if (goDown && !goUp) {
-        cam.setTrans( cam.getTrans() + cam.getRotate()*Vec3(0.f,xdiff,0.f) );
+        cam.setTrans( cam.getTrans() + cam.getRotate()*Vec3(0.f,0.f,xdiff) );
       }
       
       camNode->setMatrix(cam);
@@ -187,6 +181,7 @@ void PhysicsLab::preFrame()
       startSim = true;
       //camNode->addChild(of->addBox( Vec3((float) (rand() % 400 - 200), (float) (rand() % 400 - 200),500.), Vec3(50,50,50), Vec4(1,1,1,1), true, true ));
     }
+    
     // Initialize Ball Pit over time
     Vec4 colorArray[4];
     colorArray[0] = Vec4(1.0,1.0,1.0,1.0);
@@ -227,23 +222,18 @@ bool PhysicsLab::processEvent(InteractionEvent * event) {
         if (kp->getInteraction() == KEY_DOWN) {
           switch (kp->getKey()) {
               case A:
-                  if (!grabbing) goLeft = true;
-                  else of->rotateGrabbedObject(-3.0f, Vec3(0,1,0));
+                  goLeft = true;
                   break;
               case D:
-                  if (!grabbing) goRight = true;
-                  else of->rotateGrabbedObject(3.0f, Vec3(0,1,0));
+                  goRight = true;
                   break;
               case W:
-                  if (!grabbing) goUp = true;
-                  else of->pushGrabbedObject();
+                  goUp = true;
                   break;
               case S:
-                  if (!grabbing) goDown = true;
-                  else of->pullGrabbedObject();
+                  goDown = true;
                   break;
               case SPACE:
-                  if (grabbing) of->rotateGrabbedObject(3.0f, Vec3(0,0,1));
                   break;
           }
         } else if (kp->getInteraction() == KEY_UP) {
@@ -267,12 +257,8 @@ bool PhysicsLab::processEvent(InteractionEvent * event) {
     } else if ((he = event->asTrackedButtonEvent()) != NULL) {
       if (he->getHand() == 0 && he->getButton() == 0) {
           Matrixd handmat = PluginHelper::getHandMat(0);
-          //handmat.preMult(camNode->getMatrix());
-          //handBall->setMatrix(handmat);
-          //std::cout << handmat <<std::endl;
         if (he->getInteraction() == BUTTON_DOWN && !grabbing)
             grabbing = of->grabObject( handmat, PluginHelper::getScene() );
-            //grabbing = of->grabObject( handmat, camNode );
         else if (he->getInteraction() == BUTTON_UP) {
             grabbing = false;
             of->releaseObject();

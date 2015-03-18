@@ -58,9 +58,6 @@ class ObjectFactory {
     void updateButtonState( int );
     bool grabObject( Matrixd&, Node* );
     void releaseObject();
-    void pushGrabbedObject();
-    void pullGrabbedObject();
-    void rotateGrabbedObject(float, Vec3);
     
     void stepSim( double );
     BulletHandler* getBulletHandler();
@@ -82,10 +79,9 @@ class ObjectFactory {
     
     /* Grabbed Object Data */
     MatrixTransform* grabbedMatrix;
+    Matrixd grabbedMatrixOffset;
     Drawable* grabbedShape;
     Vec4 grabbedColor;
-    Vec3 grabbedRelativePosition, grabbedOffset;
-    Vec3 grabbedCurrentPosition, grabbedLastPosition;
     bool grabbedIsSD;
     int grabbedPhysId, grabbedId;
     /* End Grabbed Object Data */
